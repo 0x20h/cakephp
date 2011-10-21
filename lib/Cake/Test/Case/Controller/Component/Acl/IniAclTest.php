@@ -18,6 +18,8 @@
  */
 
 App::uses('AclComponent', 'Controller/Component');
+App::uses('IniAcl', 'Controller/Component/Acl');
+
 class_exists('AclComponent');
 
 /**

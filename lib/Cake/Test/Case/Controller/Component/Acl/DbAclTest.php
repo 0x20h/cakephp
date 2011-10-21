@@ -18,6 +18,7 @@
  */
 
 App::uses('AclComponent', 'Controller/Component');
+App::uses('DbAcl', 'Controller/Component/Acl');
 App::uses('AclNode', 'Model');
 class_exists('AclComponent');
 
