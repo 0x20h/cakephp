@@ -16,22 +16,12 @@ class IniAcl extends Object implements AclInterface {
 	public $config = null;
 
 /**
- * The Set::classicExtract() path to the user/aro identifier in the
- * acl.ini file.  This path will be used to extract the string
- * representation of a user used in the ini file.
- *
- * @var string
- */
-	public $userPath = 'User.username';
-
-/**
  * Initialize method
  *
  * @param AclBase $component
  * @return void
  */
 	public function initialize($component) {
-
 	}
 
 /**
@@ -43,7 +33,6 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function allow($aro, $aco, $action = "*") {
-
 	}
 
 /**
@@ -82,9 +71,14 @@ class IniAcl extends Object implements AclInterface {
  */
 	public function check($aro, $aco, $aco_action = null) {
 		if ($this->config == null) {
-			$this->config = $this->readConfigFile(APP . 'Config' . DS . 'acl.ini.php');
+			$this->config = $this->readConfigFile(APP . 'Config' . DS . 'acl.ini');
 		}
 		$aclConfig = $this->config;
+		debug($aclConfig);
+		// check all aco's to match 
+		// on each match:
+		// 	check allows. if any allow matches aro -> allow
+		// 	* matches all aros 
 
 		if (is_array($aro)) {
 			$aro = Set::classicExtract($aro, $this->userPath);

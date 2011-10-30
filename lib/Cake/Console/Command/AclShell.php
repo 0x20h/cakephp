@@ -65,32 +65,23 @@ class AclShell extends Shell {
 		if (isset($this->params['connection'])) {
 			$this->connection = $this->params['connection'];
 		}
-
-		if (!in_array(Configure::read('Acl.classname'), array('DbAcl', 'DB_ACL'))) {
-			$out = "--------------------------------------------------\n";
-			$out .= __d('cake_console', 'Error: Your current Cake configuration is set to an ACL implementation other than DB.') . "\n";
-			$out .= __d('cake_console', 'Please change your core config to reflect your decision to use DbAcl before attempting to use this script') . "\n";
-			$out .= "--------------------------------------------------\n";
-			$out .= __d('cake_console', 'Current ACL Classname: %s', Configure::read('Acl.classname')) . "\n";
-			$out .= "--------------------------------------------------\n";
-			$this->err($out);
-			$this->_stop();
-		}
-
-		if ($this->command) {
+		
+		$dbAcl = !in_array(Configure::read('Acl.classname'), array('DbAcl', 'DB_ACL'));
+		
+		if ($this->command && $dbAcl) {
 			if (!config('database')) {
 				$this->out(__d('cake_console', 'Your database configuration was not found. Take a moment to create one.'), true);
 				$this->args = null;
 				return $this->DbConfig->execute();
 			}
 			require_once (APP . 'Config' . DS . 'database.php');
-
-			if (!in_array($this->command, array('initdb'))) {
-				$collection = new ComponentCollection();
-				$this->Acl = new AclComponent($collection);
-				$controller = null;
-				$this->Acl->startup($controller);
-			}
+		}
+		
+		if (!in_array($this->command, array('initdb'))) {
+			$collection = new ComponentCollection();
+			$this->Acl = new AclComponent($collection);
+			$controller = null;
+			$this->Acl->startup($controller);
 		}
 	}
 
@@ -109,6 +100,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function create() {
+		// TODO: deny for ini
 		extract($this->_dataVars());
 
 		$class = ucfirst($this->args[0]);
@@ -142,6 +134,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function delete() {
+		// TODO: deny for ini
 		extract($this->_dataVars());
 
 		$identifier = $this->parseIdentifier($this->args[1]);
@@ -159,6 +152,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function setParent() {
+		// TODO: deny for ini
 		extract($this->_dataVars());
 		$target = $this->parseIdentifier($this->args[1]);
 		$parent = $this->parseIdentifier($this->args[2]);
@@ -183,6 +177,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function getPath() {
+		// TODO: deny for ini
 		extract($this->_dataVars());
 		$identifier = $this->parseIdentifier($this->args[1]);
 
@@ -241,6 +236,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function grant() {
+		// @TODO: deny for ini
 		extract($this->_getParams());
 
 		if ($this->Acl->allow($aro, $aco, $action)) {
@@ -256,6 +252,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function deny() {
+		// @TODO: deny for ini
 		extract($this->_getParams());
 
 		if ($this->Acl->deny($aro, $aco, $action)) {
@@ -271,6 +268,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function inherit() {
+		// @TODO: deny for ini
 		extract($this->_getParams());
 
 		if ($this->Acl->inherit($aro, $aco, $action)) {
@@ -286,6 +284,7 @@ class AclShell extends Shell {
  * @return void
  */
 	public function view() {
+		// TODO: deny for ini
 		extract($this->_dataVars());
 
 		if (isset($this->args[1])) {
@@ -346,6 +345,7 @@ class AclShell extends Shell {
  * @return mixed
  */
 	public function initdb() {
+		// @TODO: deny for ini
 		return $this->dispatchShell('schema create DbAcl');
 	}
 
