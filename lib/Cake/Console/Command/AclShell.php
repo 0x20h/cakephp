@@ -62,10 +62,11 @@ class AclShell extends Shell {
  */
 	public function startup() {
 		parent::startup();
+
 		if (isset($this->params['connection'])) {
 			$this->connection = $this->params['connection'];
 		}
-		
+
 		$dbAcl = !in_array(Configure::read('Acl.classname'), array('DbAcl', 'DB_ACL'));
 		
 		if ($this->command && $dbAcl) {
@@ -76,13 +77,14 @@ class AclShell extends Shell {
 			}
 			require_once (APP . 'Config' . DS . 'database.php');
 		}
-		
+
 		if (!in_array($this->command, array('initdb'))) {
 			$collection = new ComponentCollection();
 			$this->Acl = new AclComponent($collection);
 			$controller = null;
 			$this->Acl->startup($controller);
 		}
+
 	}
 
 /**
@@ -289,20 +291,9 @@ class AclShell extends Shell {
 
 		if (isset($this->args[1])) {
 			$identity = $this->parseIdentifier($this->args[1]);
-
-			$topNode = $this->Acl->{$class}->find('first', array(
-				'conditions' => array($class . '.id' => $this->_getNodeId($class, $identity))
-			));
-
-			$nodes = $this->Acl->{$class}->find('all', array(
-				'conditions' => array(
-					$class . '.lft >=' => $topNode[$class]['lft'],
-					$class . '.lft <=' => $topNode[$class]['rght']
-				),
-				'order' => $class . '.lft ASC'
-			));
+			$nodes = $this->Acl->tree($class, $identity);
 		} else {
-			$nodes = $this->Acl->{$class}->find('all', array('order' => $class . '.lft ASC'));
+			$nodes = $this->Acl->tree($class);
 		}
 
 		if (empty($nodes)) {
@@ -314,7 +305,6 @@ class AclShell extends Shell {
 		}
 		$this->out($class . ' tree:');
 		$this->hr();
-
 		$stack = array();
 		$last  = null;
 

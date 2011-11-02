@@ -259,6 +259,28 @@ class DbAcl extends Object implements AclInterface {
 		);
 	}
 
+	public function tree($class, $identifier = '') {
+		if (empty($identifier)) {
+			$nodes = $this->{$class}->find('all', array('order' => $class . '.lft ASC'));
+		} else {
+			$node = $this->{$class}->node($identifier);
+
+			$topNode = $this->{$class}->find('first', array(
+				'conditions' => array($class . '.id' => Set::extract($node, "0.{$class}.id")),
+			));
+
+			$nodes = $this->{$class}->find('all', array(
+				'conditions' => array(
+					$class . '.lft >=' => $topNode[$class]['lft'],
+					$class . '.lft <=' => $topNode[$class]['rght']
+				),
+				'order' => $class . '.lft ASC'
+			));	
+		}
+
+		return $nodes;
+	}
+
 /**
  * Get the keys used in an ACO
  *

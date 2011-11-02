@@ -15,6 +15,10 @@ class IniAcl extends Object implements AclInterface {
  */
 	public $config = null;
 
+	public $Aro = null;
+
+	public $Aco = null;
+
 /**
  * Initialize method
  *
@@ -22,6 +26,12 @@ class IniAcl extends Object implements AclInterface {
  * @return void
  */
 	public function initialize($component) {
+		App::uses('IniReader', 'Configure');
+		$iniFile = new IniReader(APP . 'Config' . DS);
+		$this->config = $iniFile->read(basename('acl.ini.php'));
+		// read config file, set up aro/aco objects
+		$this->Aro = new IniAro($this->config);
+		$this->Aco = new IniAco($this->config);
 	}
 
 /**
@@ -133,12 +143,10 @@ class IniAcl extends Object implements AclInterface {
  * @return array INI section structure
  */
 	public function readConfigFile($filename) {
-		App::uses('IniReader', 'Configure');
-		$iniFile = new IniReader(dirname($filename) . DS);
-		return $iniFile->read(basename($filename));
 	}
 
 /**
+
  * Removes trailing spaces on all array elements (to prepare for searching)
  *
  * @param array $array Array to trim
@@ -150,5 +158,30 @@ class IniAcl extends Object implements AclInterface {
 		}
 		array_unshift($array, "");
 		return $array;
+	}
+
+	public function tree($class, $identifier = '') {
+		return array();
+	}
+}
+
+class IniAco {
+	public function __construct(array $config = array()) {
+	}
+
+	public function node($aco) {
+
+	}
+}
+
+class IniAro {
+	public function __construct(array $config = array()) {
+		if (!empty($config['aro']) {
+
+		}
+	}
+
+	public function node($aro) {
+
 	}
 }
