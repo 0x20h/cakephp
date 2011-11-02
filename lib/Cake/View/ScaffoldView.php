@@ -65,7 +65,7 @@ class ScaffoldView extends ThemeView {
 		$names[] = $this->viewPath . DS . $subDir . $scaffoldAction;
 		$names[] = 'Scaffolds' . DS . $subDir . $name;
 
-		$paths = $this->_paths($this->plugin);
+		$paths = $this->paths($this->plugin);
 		$exts = array($this->ext);
 		if ($this->ext !== '.ctp') {
 			array_push($exts, '.ctp');

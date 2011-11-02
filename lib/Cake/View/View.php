@@ -647,7 +647,7 @@ class View extends Object {
 				$name = $this->viewPath . DS . $subDir . $name;
 			}
 		}
-		$paths = $this->_paths($this->plugin);
+		$paths = $this->paths($this->plugin);
 
 		$exts = $this->_getExtensions();
 		foreach ($exts as $ext) {
@@ -687,7 +687,7 @@ class View extends Object {
 		if (!is_null($this->layoutPath)) {
 			$subDir = $this->layoutPath . DS;
 		}
-		$paths = $this->_paths($this->plugin);
+		$paths = $this->paths($this->plugin);
 		$file = 'Layouts' . DS . $subDir . $name;
 
 		$exts = $this->_getExtensions();
@@ -723,7 +723,7 @@ class View extends Object {
  * @return mixed Either a string to the element filename or false when one can't be found.
  */
 	protected function _getElementFileName($name, $plugin = null) {
-		$paths = $this->_paths($plugin);
+		$paths = $this->paths($plugin);
 		$exts = $this->_getExtensions();
 		foreach ($exts as $ext) {
 			foreach ($paths as $path) {
@@ -742,7 +742,7 @@ class View extends Object {
  * @param boolean $cached Set to true to force a refresh of view paths.
  * @return array paths
  */
-	protected function _paths($plugin = null, $cached = true) {
+	public function paths($plugin = null, $cached = true) {
 		if ($plugin === null && $cached === true && !empty($this->_paths)) {
 			return $this->_paths;
 		}

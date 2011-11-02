@@ -51,8 +51,8 @@ class ThemeView extends View {
  * @return array paths
  * @todo Make theme path building respect $cached parameter.
  */
-	protected function _paths($plugin = null, $cached = true) {
-		$paths = parent::_paths($plugin, $cached);
+	public function paths($plugin = null, $cached = true) {
+		$paths = parent::paths($plugin, $cached);
 		$themePaths = array();
 
 		if (!empty($this->theme)) {

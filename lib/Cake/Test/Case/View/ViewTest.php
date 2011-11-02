@@ -103,7 +103,7 @@ class TestView extends View {
  * @return void
  */
 	public function paths($plugin = null, $cached = true) {
-		return $this->_paths($plugin, $cached);
+		return parent::paths($plugin, $cached);
 	}
 
 /**
