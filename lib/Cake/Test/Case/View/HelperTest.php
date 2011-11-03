@@ -255,7 +255,7 @@ class HelperTest extends CakeTestCase {
  */
 	public function testSetEntityScoped() {
 		$this->Helper->setEntity('HelperTestPost', true);
-		$this->assertEquals(array('HelperTestPost'), $this->Helper->entity());
+	$this->assertEquals(array('HelperTestPost'), $this->Helper->entity());
 
 		$this->Helper->setEntity('id');
 		$expected = array('HelperTestPost', 'id');
@@ -311,6 +311,19 @@ class HelperTest extends CakeTestCase {
 	}
 
 /**
+ * Test creating saveMany() compatible entities
+ *
+ * @return void
+ */
+	public function testSetEntitySaveMany() {
+		$this->Helper->setEntity('HelperTestPost', true);
+
+		$this->Helper->setEntity('0.HelperTestPost.id');
+		$expected = array('0', 'HelperTestPost', 'id');
+		$this->assertEquals($expected, $this->Helper->entity());
+	}
+
+/**
  * Test that setEntity doesn't make CamelCase fields that are not associations an
  * associated model.
  *
@@ -346,6 +359,25 @@ class HelperTest extends CakeTestCase {
 		$this->assertEquals('Tag', $this->Helper->model());
 		$this->assertEquals('Tag', $this->Helper->field());
 		$this->assertEquals(array('Tag', 'Tag'), $this->Helper->entity());
+	}
+
+/**
+ * Test that habtm associations can have property fields created.
+ *
+ * @return void
+ */
+	public function testSetEntityHabtmPropertyFieldNames() {
+		$this->Helper->fieldset = array(
+			'HelperTestComment' => array(
+				'fields' => array('Tag' => array('type' => 'multiple'))
+			)
+		);
+		$this->Helper->setEntity('HelperTestComment', true);
+
+		$this->Helper->setEntity('Tag.name');
+		$this->assertEquals('Tag', $this->Helper->model());
+		$this->assertEquals('name', $this->Helper->field());
+		$this->assertEquals(array('Tag', 'name'), $this->Helper->entity());
 	}
 
 /**

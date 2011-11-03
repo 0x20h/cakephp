@@ -146,7 +146,7 @@ class RouterTest extends CakeTestCase {
 			'named' => array(),
 			'plugin' => 'test_plugin',
 			'controller' => 'test_plugin',
-			'action' => 'index', 
+			'action' => 'index',
 			'[method]' => 'GET'
 		);
 		$this->assertEqual($result, $expected);
@@ -186,7 +186,7 @@ class RouterTest extends CakeTestCase {
 			'named' => array(),
 			'plugin' => 'test_plugin',
 			'controller' => 'test_plugin',
-			'action' => 'index', 
+			'action' => 'index',
 			'[method]' => 'GET'
 		);
 		$this->assertEqual($result, $expected);
@@ -2459,6 +2459,7 @@ class RouterTest extends CakeTestCase {
 		Router::redirect('/blog', array('controller' => 'posts'), array('status' => 302));
 		$this->assertEqual(count(Router::$routes), 1);
 		Router::$routes[0]->response = $this->getMock('CakeResponse', array('_sendHeader'));
+		Router::$routes[0]->stop = false;
 		$this->assertEqual(Router::$routes[0]->options['status'], 302);
 
 		Router::parse('/blog');
