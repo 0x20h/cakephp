@@ -96,17 +96,6 @@ class TestView extends View {
 	}
 
 /**
- * paths method
- *
- * @param string $plugin
- * @param boolean $cached
- * @return void
- */
-	public function paths($plugin = null, $cached = true) {
-		return parent::paths($plugin, $cached);
-	}
-
-/**
  * _render wrapper for testing (temporary).
  *
  * @param string $___viewFn
