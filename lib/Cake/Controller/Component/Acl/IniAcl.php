@@ -274,9 +274,9 @@ class IniAro {
 				foreach ($deps as $dependency) {
 					// 1. find or insert dep
 					// 2. add node as child
-					$node = $this->node($dependency, $root);
-					if (!$node) {
-					}
+//					$node = $this->node($dependency, $root);
+//					if (!$node) {
+//					}
 
 					if (!isset($tree[$dependency])) {
 						$tree[$dependency] = array();
@@ -285,8 +285,6 @@ class IniAro {
 					$tree[$dependency][] = $node;
 				}
 			}
-
-			
 		}
 
 		return $tree;

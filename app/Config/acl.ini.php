@@ -49,6 +49,7 @@ User.jeff = Role.manager					;another worker bee
 User.jonny_dev = Role.admin					;nerd, the
 
 [aco.allow]
+controllers = Role.admin
 controllers.Articles.add = Role.manager
 controllers.Articles.edit = Role.manager
 controllers.Articles.delete = User.peter
