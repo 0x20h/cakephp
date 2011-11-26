@@ -276,7 +276,6 @@ class IniAro {
 					// 2. add node as child
 					$node = $this->node($dependency, $root);
 					if (!$node) {
-						$
 					}
 
 					if (!isset($tree[$dependency])) {
