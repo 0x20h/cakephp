@@ -15,8 +15,18 @@ class IniAcl extends Object implements AclInterface {
  */
 	public $config = null;
 
+/**
+ * Aro Object
+ *
+ * @var IniAro
+ */
 	public $Aro = null;
 
+/**
+ * Aco Object
+ * 
+ * @var IniAco
+ */
 	public $Aco = null;
 
 /**
@@ -27,11 +37,9 @@ class IniAcl extends Object implements AclInterface {
  */
 	public function initialize($component) {
 		App::uses('IniReader', 'Configure');
-		$iniFile = new IniReader(APP . 'Config' . DS);
-		$this->config = $iniFile->read(basename('acl.ini.php'));
-		// read config file, set up aro/aco objects
-		$this->Aro = new IniAro($this->config);
-		$this->Aco = new IniAco($this->config);
+		$this->config = $this->readConfigFile(APP . 'Config' . DS . 'acl.ini.php');
+		$this->Aro = new IniAro($this->config['aro']);
+		$this->Aco = new IniAco($this->config['aco.allow'], $this->config['aco.deny']);
 	}
 
 /**
@@ -43,6 +51,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function allow($aro, $aco, $action = "*") {
+		$this->Aco->allow($aro, $aco, $action);
 	}
 
 /**
@@ -54,11 +63,11 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function deny($aro, $aco, $action = "*") {
-
+		$this->Aco->deny($aro, $aco, $action);
 	}
 
 /**
- * No op method, inherit cannot be done with IniAcl
+ * No op method, inherit cannot be done with IniAc
  *
  * @param string $aro ARO The requesting object identifier.
  * @param string $aco ACO The controlled object identifier.
@@ -66,7 +75,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function inherit($aro, $aco, $action = "*") {
-
+		$this->Aco->inherit($aro, $aco, $action);
 	}
 
 /**
@@ -80,60 +89,28 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function check($aro, $aco, $aco_action = null) {
-		if ($this->config == null) {
-			$this->config = $this->readConfigFile(APP . 'Config' . DS . 'acl.ini');
-		}
-		$aclConfig = $this->config;
-		debug($aclConfig);
-		// check all aco's to match 
-		// on each match:
-		// 	check allows. if any allow matches aro -> allow
-		// 	* matches all aros 
-
-		if (is_array($aro)) {
-			$aro = Set::classicExtract($aro, $this->userPath);
+		$defaultPolicy = 'deny';
+		$allow = 0;
+		$prioritizedAros = $this->Aro->roles($aro);
+		$path = $this->Aco->path($aco);	
+		
+		if (empty($path)) {
+			return $allow;
 		}
 
-		if (isset($aclConfig[$aro]['deny'])) {
-			$userDenies = $this->arrayTrim(explode(",", $aclConfig[$aro]['deny']));
+		foreach ($path as $depth => $node) {
+			foreach ($prioritizedAros as $aros) {
+				if (!empty($node['allow'])) {			
+					$allow = $allow || count(array_intersect($node['allow'], $aros)) > 0;
+				}
 
-			if (array_search($aco, $userDenies)) {
-				return false;
-			}
-		}
-
-		if (isset($aclConfig[$aro]['allow'])) {
-			$userAllows = $this->arrayTrim(explode(",", $aclConfig[$aro]['allow']));
-
-			if (array_search($aco, $userAllows)) {
-				return true;
-			}
-		}
-
-		if (isset($aclConfig[$aro]['groups'])) {
-			$userGroups = $this->arrayTrim(explode(",", $aclConfig[$aro]['groups']));
-
-			foreach ($userGroups as $group) {
-				if (array_key_exists($group, $aclConfig)) {
-					if (isset($aclConfig[$group]['deny'])) {
-						$groupDenies = $this->arrayTrim(explode(",", $aclConfig[$group]['deny']));
-
-						if (array_search($aco, $groupDenies)) {
-							return false;
-						}
-					}
-
-					if (isset($aclConfig[$group]['allow'])) {
-						$groupAllows = $this->arrayTrim(explode(",", $aclConfig[$group]['allow']));
-
-						if (array_search($aco, $groupAllows)) {
-							return true;
-						}
-					}
+				if (!empty($node['deny'])) {
+					$allow = $allow && count(array_intersect($node['deny'], $aros)) == 0;
 				}
 			}
 		}
-		return false;
+
+		return $allow;
 	}
 
 /**
@@ -143,45 +120,176 @@ class IniAcl extends Object implements AclInterface {
  * @return array INI section structure
  */
 	public function readConfigFile($filename) {
-	}
-
-/**
-
- * Removes trailing spaces on all array elements (to prepare for searching)
- *
- * @param array $array Array to trim
- * @return array Trimmed array
- */
-	public function arrayTrim($array) {
-		foreach ($array as $key => $value) {
-			$array[$key] = trim($value);
-		}
-		array_unshift($array, "");
-		return $array;
+		$sections = parse_ini_file($filename, true);
+		return $sections;
 	}
 
 	public function tree($class, $identifier = '') {
 		return array();
 	}
+
+
 }
 
+/**
+ * Access Control Object
+ *
+ */
 class IniAco {
-	public function __construct(array $config = array()) {
+	public function __construct(array $allow = array(), array $deny = array()) {
+		$this->tree = $this->buildTree($allow, $deny);
 	}
 
 	public function node($aco) {
+		debug(__METHOD);
+		debug($aco);
+		exit;
+	}
 
+/**
+ * return path to aco as array
+ *
+ * @return array
+ */
+	public function path($aco) {
+		$aco = $this->resolve($aco);
+		$path = array();
+		$tree = &$this->tree;
+
+		foreach ($aco as $node) {
+			if (empty($tree[$node])) {
+				break;
+			}
+
+			$element = array();
+
+			if (!empty($tree[$node]['allow'])) {
+				$element['allow'] = $tree[$node]['allow'];
+			}
+
+			if (!empty($tree[$node]['deny'])) {
+				$element['deny'] = $tree[$node]['deny'];
+			}
+
+			$path[] = $element;
+
+			if (empty($tree[$node]['children'])) {
+				break;
+			}
+
+			$tree = &$tree[$node]['children'];
+		}
+
+		return $path;
+	}
+
+/**
+ * return path from ACO string
+ *
+ * @return array path
+ */
+	public function resolve($aco) {
+		return array_map('trim', explode('/', $aco));
+	}
+
+	public function buildTree(array $allow, array $deny = array(), array $tree = array()) {
+		$stack = array();
+		$root = &$tree;
+
+		foreach ($allow as $dotPath => $commaSeparatedAros) {
+			$path = array_map('trim', explode('.', $dotPath));
+			$aros = array_map('trim', explode(',', $commaSeparatedAros));
+			$depth = count($path);
+
+			foreach ($path as $i => $node) {
+				if (!isset($tree[$node]['children'])) {
+					$tree[$node] = array(
+						'children' => array(),
+					);
+				}
+
+				// keep reference to leaf node
+				if ($i + 1 < $depth) {
+					$tree = &$tree[$node]['children'];
+				}
+			}
+
+			$tree[$node]['allow'] = $aros;
+
+			if (!empty($deny[$dotPath])) {
+				$tree[$node]['deny'] = array_map('trim', explode(',', $deny[$dotPath]));
+			}
+
+			$tree = &$root;
+		}
+
+		return $tree;
 	}
 }
 
+/**
+ * Access Request Object
+ *
+ */
 class IniAro {
-	public function __construct(array $config = array()) {
-		if (!empty($config['aro']) {
-
-		}
+	public function __construct(array $aro = array()) {
+		$this->tree = $this->buildTree($aro);
 	}
 
 	public function node($aro) {
+	}
 
+	public function roles($aro) {
+		$aros = array();
+		$aro = $this->resolve($aro);
+		
+		foreach ($this->tree as $node => $children) {
+			if (in_array($aro, $children)) {
+				$aros[0][] = $node;
+			}
+		}
+
+		$aros[1][] = $aro;
+		return $aros;
+	}
+
+
+/**
+ * return path from ARO
+ *
+ * @return string dot separated aro string (e.g. User.jeff)
+ */
+	public function resolve(array $aro) {
+		return $aro['model'].'.'.$aro['foreign_key'];
+	}
+
+	public function buildTree(array $sections, $prefix = '') {
+		$tree = array();
+		$root = &$tree;
+
+		foreach ($sections as $node => $commaSeparatedDeps) {
+			if ($commaSeparatedDeps) {
+				$deps = array_map('trim', explode(',', $commaSeparatedDeps));
+				
+				foreach ($deps as $dependency) {
+					// 1. find or insert dep
+					// 2. add node as child
+					$node = $this->node($dependency, $root);
+					if (!$node) {
+						$
+					}
+
+					if (!isset($tree[$dependency])) {
+						$tree[$dependency] = array();
+					}
+					
+					$tree[$dependency][] = $node;
+				}
+			}
+
+			
+		}
+
+		return $tree;
 	}
 }
