@@ -34,27 +34,37 @@
 ; User.jonny_dev = Role.admin		;nerd
 ;
 ; [aco.allow]
-; controllers.Articles.add = Role.manager
-; controllers.Articles.edit = Role.manager
-; controllers.Articles.delete = User.peter
-; controllers.Articles.publish = User.peter
+; controllers = Role.admin						; nerd rules
+; controllers.Articles.add = Role.manager		; 
+; controllers.Articles.edit = Role.manager		;
+; controllers.Articles.delete = User.peter		; only peter may delete and
+; controllers.Articles.publish = User.peter		; publish
+; controllers.Invoices = Role.manager			; 
+; controllers.Invoices.delete = User.peter		; overwrite deny rule for peter
+;
+; [aco.deny]
+; controllers.Invoices.delete = Role.manager	; deny delete, only peter is allowed
+[map]
+Role = User.role
+User = User.username
 
 [aro]
-Role.admin = null
-Role.manager = null
-Role.sales = null
-User.peter = Role.manager, Role.sales 		;uber boss
-User.sarah = Role.manager					;secretary
-User.jeff = Role.manager					;another worker bee
-User.jonny_dev = Role.admin					;nerd, the
+Role.admin 		= null							; root aro
+Role.sales 		= null							;
+Role.accounting = Role.sales					;
+Role.manager 	= Role.sales					; manager inherits from sales
+User.peter 		= Role.manager, Role.accounting	; uber boss
+User.sarah 		= Role.accounting				; secretary
+User.jeff 		= Role.manager					; another worker bee
+User.dev		= Role.admin					;
 
 [aco.allow]
 controllers = Role.admin
-controllers.Articles.add = Role.manager
-controllers.Articles.edit = Role.manager
+controllers.Articles = Role.manager
 controllers.Articles.delete = User.peter
 controllers.Articles.publish = User.peter
 controllers.Reports.view = Role.sales
 
 [aco.deny]
-controllers.Articles.add = User.jeff		;jeff should not add articles
+controllers.Articles.publish = Role.manager
+controllers.Articles.delete = Role.manager	

@@ -243,14 +243,25 @@ class IniAro {
 		$aros = array();
 		$aro = $this->resolve($aro);
 		
-		foreach ($this->tree as $node => $children) {
-			if (in_array($aro, $children)) {
-				$aros[0][] = $node;
+		$stack = array(array($aro, 0));
+		$path = array();
+
+		while (!empty($stack)) {
+			list($element, $depth) = array_pop($stack);
+			$path[] = $element;
+
+			$aros[$depth][] = $element;
+
+			foreach ($this->tree as $node => $children) {
+				if (in_array($element, $children)) {
+					array_push($path, $element);
+					array_push($stack, array($node, $depth+1));
+				}
 			}
 		}
 
-		$aros[1][] = $aro;
-		return $aros;
+
+		return array_reverse($aros);
 	}
 
 
@@ -272,12 +283,6 @@ class IniAro {
 				$deps = array_map('trim', explode(',', $commaSeparatedDeps));
 				
 				foreach ($deps as $dependency) {
-					// 1. find or insert dep
-					// 2. add node as child
-//					$node = $this->node($dependency, $root);
-//					if (!$node) {
-//					}
-
 					if (!isset($tree[$dependency])) {
 						$tree[$dependency] = array();
 					}
