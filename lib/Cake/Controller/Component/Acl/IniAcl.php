@@ -8,12 +8,15 @@
  */
 class IniAcl extends Object implements AclInterface {
 
+	const DENY = 0;
+	const ALLOW = 1;
+
 /**
- * Array with configuration, parsed from ini file
+ * Options array 
  *
  * @var array
  */
-	public $config = null;
+	public $options = array();
 
 /**
  * Aro Object
@@ -36,10 +39,14 @@ class IniAcl extends Object implements AclInterface {
  * @return void
  */
 	public function initialize($component) {
-		App::uses('IniReader', 'Configure');
-		$this->config = $this->readConfigFile(APP . 'Config' . DS . 'acl.ini.php');
-		$this->Aro = new IniAro($this->config['aro']);
-		$this->Aco = new IniAco($this->config['aco.allow'], $this->config['aco.deny']);
+		$this->options = array(
+			'policy' => self::DENY,
+			'config' => APP . 'Config' . DS . 'acl.ini.php',
+		);
+
+		$config = $this->readConfigFile($this->options['config']);
+		$this->Aro = new IniAro($config['aro'], $config['map']);
+		$this->Aco = new IniAco($config['aco.allow'], $config['aco.deny'], $config['map']);
 	}
 
 /**
@@ -51,7 +58,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function allow($aro, $aco, $action = "*") {
-		$this->Aco->allow($aro, $aco, $action);
+		return $this->Aco->allow($aro, $aco, $action);
 	}
 
 /**
@@ -89,8 +96,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function check($aro, $aco, $aco_action = null) {
-		$defaultPolicy = 'deny';
-		$allow = 0;
+		$allow = $this->options['policy'];
 		$prioritizedAros = $this->Aro->roles($aro);
 		$path = $this->Aco->path($aco);	
 		
@@ -125,7 +131,9 @@ class IniAcl extends Object implements AclInterface {
 	}
 
 	public function tree($class, $identifier = '') {
-		return array();
+		debug($class);
+		debug($identifier);
+		return $this->$class->node($identifier);
 	}
 
 
@@ -137,13 +145,24 @@ class IniAcl extends Object implements AclInterface {
  */
 class IniAco {
 	public function __construct(array $allow = array(), array $deny = array()) {
-		$this->tree = $this->buildTree($allow, $deny);
+		$this->tree = $this->build($allow, $deny);
 	}
 
 	public function node($aco) {
-		debug(__METHOD);
-		debug($aco);
-		exit;
+		$aco = $this->resolve($aco);
+		$tree = &$this->tree;
+		$depth = count($aco);
+		
+		foreach ($aco as $i => $node) {
+			if (!isset($tree[$node])) {
+				return false;
+			}
+			if ($i < $depth - 1) {
+				$tree = &$tree[$node]['children'];
+			}
+		}
+
+		return $tree;
 	}
 
 /**
@@ -183,6 +202,28 @@ class IniAco {
 		return $path;
 	}
 
+	public function allow($aro, $aco, $action) {
+		$aco = $this->resolve($aco);
+		$tree = &$this->tree;
+		$depth = count($aco);
+		
+		foreach ($aco as $i => $node) {
+			if (!isset($tree[$node])) {
+				$tree[$node]  = array(
+					'children' => array(),
+				);
+			}
+
+			if ($i < $depth - 1) {
+				$tree = &$tree[$node]['children'];
+			} else {
+				$tree[$node]['allow'][] = $aro;
+			}
+		}
+
+		return true;
+	}
+
 /**
  * return path from ACO string
  *
@@ -192,7 +233,7 @@ class IniAco {
 		return array_map('trim', explode('/', $aco));
 	}
 
-	public function buildTree(array $allow, array $deny = array(), array $tree = array()) {
+	public function build(array $allow, array $deny = array(), array $tree = array()) {
 		$stack = array();
 		$root = &$tree;
 
@@ -233,7 +274,7 @@ class IniAco {
  */
 class IniAro {
 	public function __construct(array $aro = array()) {
-		$this->tree = $this->buildTree($aro);
+		$this->tree = $this->build($aro);
 	}
 
 	public function node($aro) {
@@ -248,13 +289,10 @@ class IniAro {
 
 		while (!empty($stack)) {
 			list($element, $depth) = array_pop($stack);
-			$path[] = $element;
-
 			$aros[$depth][] = $element;
 
 			foreach ($this->tree as $node => $children) {
 				if (in_array($element, $children)) {
-					array_push($path, $element);
 					array_push($stack, array($node, $depth+1));
 				}
 			}
@@ -274,7 +312,7 @@ class IniAro {
 		return $aro['model'].'.'.$aro['foreign_key'];
 	}
 
-	public function buildTree(array $sections, $prefix = '') {
+	public function build(array $sections, $prefix = '') {
 		$tree = array();
 		$root = &$tree;
 
