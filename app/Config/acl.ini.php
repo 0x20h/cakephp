@@ -33,6 +33,8 @@
 ; User.sarah = Role.manager			;secretary
 ; User.jonny_dev = Role.admin		;nerd
 ;
+; define access control objects
+; 
 ; [aco.allow]
 ; controllers = Role.admin						; nerd rules
 ; controllers.Articles.add = Role.manager		; 
@@ -44,9 +46,15 @@
 ;
 ; [aco.deny]
 ; controllers.Invoices.delete = Role.manager	; deny delete, only peter is allowed
+
+; define mapping 
 [map]
-Role = User.role
+Role = User.role_id
 User = User.username
+
+; define aliases
+[alias]
+Role.1 = Role.sales
 
 [aro]
 Role.admin 		= null							; root aro
