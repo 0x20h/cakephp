@@ -70,7 +70,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function deny($aro, $aco, $action = "*") {
-		$this->Aco->deny($aro, $aco, $action);
+		return $this->Aco->deny($aro, $aco, $action);
 	}
 
 /**
@@ -119,6 +119,7 @@ class IniAcl extends Object implements AclInterface {
 		return $allow;
 	}
 
+
 /**
  * Parses an INI file and returns an array that reflects the INI file's section structure. Double-quote friendly.
  *
@@ -129,14 +130,13 @@ class IniAcl extends Object implements AclInterface {
 		$sections = parse_ini_file($filename, true);
 		return $sections;
 	}
-
+	
+	
 	public function tree($class, $identifier = '') {
 		debug($class);
 		debug($identifier);
 		return $this->$class->node($identifier);
 	}
-
-
 }
 
 /**
@@ -144,6 +144,7 @@ class IniAcl extends Object implements AclInterface {
  *
  */
 class IniAco {
+
 	public function __construct(array $allow = array(), array $deny = array()) {
 		$this->tree = $this->build($allow, $deny);
 	}
@@ -201,6 +202,7 @@ class IniAco {
 
 		return $path;
 	}
+
 
 	public function allow($aro, $aco, $action) {
 		$aco = $this->resolve($aco);
@@ -273,17 +275,19 @@ class IniAco {
  *
  */
 class IniAro {
-	public function __construct(array $aro = array()) {
+	public $map = array(
+		'User' => 'User.username'
+	);
+
+	public function __construct(array $aro = array(), array $map = array()) {
+		!empty($map) && $this->map = $map;
 		$this->tree = $this->build($aro);
 	}
 
-	public function node($aro) {
-	}
-
+	
 	public function roles($aro) {
 		$aros = array();
 		$aro = $this->resolve($aro);
-		
 		$stack = array(array($aro, 0));
 		$path = array();
 
@@ -293,11 +297,10 @@ class IniAro {
 
 			foreach ($this->tree as $node => $children) {
 				if (in_array($element, $children)) {
-					array_push($stack, array($node, $depth+1));
+					array_push($stack, array($node, $depth + 1));
 				}
 			}
 		}
-
 
 		return array_reverse($aros);
 	}
@@ -309,8 +312,17 @@ class IniAro {
  * @return string dot separated aro string (e.g. User.jeff)
  */
 	public function resolve(array $aro) {
-		return $aro['model'].'.'.$aro['foreign_key'];
+		foreach ($this->map as $aroGroup => $map) {
+			list ($model, $field) = explode('.', $map);
+			
+			if (isset($aro[$model][$field])) {
+				return $model . '.' . $aro[$model][$field];
+			}
+		}
+
+		trigger_error('no map entry found in aro:'.print_r($aro, true), E_USER_WARNING);
 	}
+
 
 	public function build(array $sections, $prefix = '') {
 		$tree = array();
