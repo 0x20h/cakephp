@@ -44,9 +44,10 @@
 ;
 ; [aco.deny]
 ; controllers.Invoices.delete = Role.manager	; deny delete, only peter is allowed
+
 [map]
-Role = User.role
 User = User.username
+Role = User.role
 
 [aro]
 Role.admin 		= null							; root aro
