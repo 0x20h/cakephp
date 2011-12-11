@@ -221,7 +221,7 @@
  * The classname and database used in CakePHP's
  * access control lists.
  */
-	Configure::write('Acl.classname', 'IniAcl');
+	Configure::write('Acl.classname', 'DbAcl');
 	Configure::write('Acl.database', 'default');
 
 /**

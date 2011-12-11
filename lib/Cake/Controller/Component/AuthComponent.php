@@ -544,6 +544,7 @@ class AuthComponent extends Component {
 		if (!CakeSession::check(self::$sessionKey)) {
 			return null;
 		}
+
 		if ($key == null) {
 			return CakeSession::read(self::$sessionKey);
 		}
