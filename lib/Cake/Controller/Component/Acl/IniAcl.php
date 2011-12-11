@@ -196,7 +196,7 @@ class IniAco {
 				if ($node == $aco[$depth] || preg_match($pattern, $aco[$depth])) {
 					// fill path if empty
 					if (empty($path[$depth])) {
-						for ($i = count($path) - 1; $i <= $depth; $i++) {
+						for ($i = count($path); $i <= $depth; $i++) {
 							$path[$i] = array('allow' => array(), 'deny' => array());
 						}
 					}
