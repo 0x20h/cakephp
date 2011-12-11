@@ -18,6 +18,7 @@ class IniAcl extends Object implements AclInterface {
  */
 	public $options = array();
 
+
 /**
  * Aro Object
  *
@@ -145,6 +146,11 @@ class IniAcl extends Object implements AclInterface {
  */
 class IniAco {
 
+	public static $modifiers = array(
+		'*' => '.*',
+		'?' => '.?',
+	);
+
 	public function __construct(array $allow = array(), array $deny = array()) {
 		$this->tree = $this->build($allow, $deny);
 	}
@@ -174,14 +180,50 @@ class IniAco {
 	public function path($aco) {
 		$aco = $this->resolve($aco);
 		$path = array();
-		$tree = &$this->tree;
+		$depth = 0;
+		$tree = $root = &$this->tree;
 
+		// add allow/deny rules from matchable nodes
+		$stack = array(array($root, 0));
+		while (!empty($stack)) {
+			list($root, $depth) = array_pop($stack);
+
+			foreach ($root as $node => $elements) {
+				if (strpos($node, '*') === false && $node != $aco[$depth]) {
+					continue;
+				}
+				$pattern = '#^'.str_replace(array_keys(self::$modifiers), array_values(self::$modifiers), $node).'$#';
+				if ($node == $aco[$depth] || preg_match($pattern, $aco[$depth])) {
+					// fill path if empty
+					if (empty($path[$depth])) {
+						for ($i = count($path) - 1; $i <= $depth; $i++) {
+							$path[$i] = array('allow' => array(), 'deny' => array());
+						}
+					}
+					
+					// merge allow/denies with $path of current depth
+					if (!empty($elements['allow'])) {
+						$path[$depth]['allow'] = array_merge($path[$depth]['allow'], $elements['allow']);
+					}
+
+					if (!empty($elements['deny'])) {
+						$path[$depth]['deny'] = array_merge($path[$depth]['deny'], $elements['deny']);
+					}
+					// traverse tree
+					if (!empty($elements['children']) && isset($aco[$depth + 1])) {
+						array_push($stack, array($elements['children'], $depth + 1));
+					}
+				}	
+			}
+		}
+
+		// overwrite ?
 		foreach ($aco as $node) {
 			if (empty($tree[$node])) {
 				break;
 			}
 
-			$element = array();
+			$element = array('name' => $node);
 
 			if (!empty($tree[$node]['allow'])) {
 				$element['allow'] = $tree[$node]['allow'];
@@ -199,7 +241,7 @@ class IniAco {
 
 			$tree = &$tree[$node]['children'];
 		}
-
+		
 		return $path;
 	}
 
@@ -258,16 +300,35 @@ class IniAco {
 			}
 
 			$tree[$node]['allow'] = $aros;
-
-			if (!empty($deny[$dotPath])) {
-				$tree[$node]['deny'] = array_map('trim', explode(',', $deny[$dotPath]));
-			}
-
 			$tree = &$root;
 		}
+		
+		foreach ($deny as $dotPath => $commaSeparatedAros) {
+			$path = array_map('trim', explode('.', $dotPath));
+			$aros = array_map('trim', explode(',', $commaSeparatedAros));
+			$depth = count($path);
 
+			foreach ($path as $i => $node) {
+				if (!isset($tree[$node]['children'])) {
+					$tree[$node] = array(
+						'children' => array(),
+					);
+				}
+
+				// keep reference to leaf node
+				if ($i + 1 < $depth) {
+					$tree = &$tree[$node]['children'];
+				}
+			}
+			
+			$tree[$node]['deny'] = $aros;
+			$tree = &$root;
+		}
+	
 		return $tree;
 	}
+
+
 }
 
 /**
@@ -314,6 +375,10 @@ class IniAro {
 	public function resolve(array $aro) {
 		foreach ($this->map as $aroGroup => $map) {
 			list ($model, $field) = explode('.', $map);
+		
+			if (isset($aro['model']) && isset($aro['foreign_key'])) {
+				return $aro['model'] .  '.' . $aro['foreign_key'];
+			}
 			
 			if (isset($aro[$model][$field])) {
 				return $model . '.' . $aro[$model][$field];

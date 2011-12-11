@@ -64,6 +64,7 @@ User.dev		= Role.admin					;
 
 [aco.allow]
 controllers = Role.admin
+controllers.*.manager_* = Role.manager
 controllers.Articles = Role.manager
 controllers.Articles.delete = User.peter
 controllers.Articles.publish = User.peter
@@ -72,3 +73,4 @@ controllers.Reports.view = Role.sales
 [aco.deny]
 controllers.Articles.publish = Role.manager
 controllers.Articles.delete = Role.manager	
+controllers.*.manager_delete = Role.manager
