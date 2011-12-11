@@ -221,7 +221,7 @@
  * The classname and database used in CakePHP's
  * access control lists.
  */
-	Configure::write('Acl.classname', 'IniAcl');
+	Configure::write('Acl.classname', 'DbAcl');
 	Configure::write('Acl.database', 'default');
 
 /**
@@ -330,3 +330,15 @@ Cache::config('_cake_model_', array(
 	'serialize' => ($engine === 'File'),
 	'duration' => $duration
 ));
+
+Cache::config('default', array(
+	'engine' => 'File', //[required]
+ 	'duration'=> 3600, //[optional]
+ 	'probability'=> 100, //[optional]
+ 	'path' => CACHE, //[optional] use system tmp directory - remember to use absolute path
+ 	'prefix' => 'cake_', //[optional]  prefix every cache file with this string
+ 	'lock' => false, //[optional]  use file locking
+ 	'serialize' => true,
+	'mask' => 0666,
+));
+
