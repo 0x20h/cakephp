@@ -307,11 +307,19 @@ class IniAro {
 
 
 /**
- * return path from ARO
+ * return pathes to the given ARO
  *
  * @return string dot separated aro string (e.g. User.jeff)
  */
-	public function resolve(array $aro) {
+	public function resolve($aro) {
+		if (is_string($aro)) {
+			return 'User.'.$aro;
+		}
+
+		if (isset($aro['model']) && isset($aro['foreign_key'])) {
+			return $aro['model'] . '.' . $aro['foreign_key'];
+		}
+
 		foreach ($this->map as $aroGroup => $map) {
 			list ($model, $field) = explode('.', $map);
 			
