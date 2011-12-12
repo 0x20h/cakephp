@@ -39,11 +39,15 @@ class IniAcl extends Object implements AclInterface {
  * @param AclBase $component
  * @return void
  */
-	public function initialize($component) {
+	public function initialize($Component) {
 		$this->options = array(
 			'policy' => self::DENY,
 			'config' => APP . 'Config' . DS . 'acl.ini.php',
 		);
+
+		if (!empty($Component->settings['ini_acl'])) {
+			$this->options = array_merge($this->options, $Component->settings['ini_acl']);
+		}
 
 		$config = $this->readConfigFile($this->options['config']);
 		$this->Aro = new IniAro($config['aro'], $config['map']);
@@ -173,79 +177,62 @@ class IniAco {
 	}
 
 /**
- * return path to aco as array
+ * return path to aco with allow and deny rules for each level as array
  *
  * @return array
  */
 	public function path($aco) {
 		$aco = $this->resolve($aco);
 		$path = array();
-		$depth = 0;
-		$tree = $root = &$this->tree;
-
+		$level = 0;
+		$root = &$this->tree;
+		
 		// add allow/deny rules from matchable nodes
 		$stack = array(array($root, 0));
+
 		while (!empty($stack)) {
-			list($root, $depth) = array_pop($stack);
+			list($root, $level) = array_pop($stack);
+
+			if (empty($path[$level])) {
+				$path[$level] = array();
+			}
 
 			foreach ($root as $node => $elements) {
-				if (strpos($node, '*') === false && $node != $aco[$depth]) {
+				if (strpos($node, '*') === false && $node != $aco[$level]) {
 					continue;
 				}
+
 				$pattern = '#^'.str_replace(array_keys(self::$modifiers), array_values(self::$modifiers), $node).'$#';
-				if ($node == $aco[$depth] || preg_match($pattern, $aco[$depth])) {
-					// fill path if empty
-					if (empty($path[$depth])) {
-						for ($i = count($path); $i <= $depth; $i++) {
-							$path[$i] = array('allow' => array(), 'deny' => array());
+
+				if ($node == $aco[$level] || preg_match($pattern, $aco[$level])) {
+					// merge allow/denies with $path of current level
+					foreach (array('allow', 'deny') as $policy) {
+						if (!empty($elements[$policy])) {
+							if (empty($path[$level][$policy])) {
+								$path[$level][$policy] = array();
+							}
+
+							$path[$level][$policy] = array_merge($path[$level][$policy], $elements[$policy]);
 						}
 					}
-					
-					// merge allow/denies with $path of current depth
-					if (!empty($elements['allow'])) {
-						$path[$depth]['allow'] = array_merge($path[$depth]['allow'], $elements['allow']);
-					}
 
-					if (!empty($elements['deny'])) {
-						$path[$depth]['deny'] = array_merge($path[$depth]['deny'], $elements['deny']);
-					}
-					// traverse tree
-					if (!empty($elements['children']) && isset($aco[$depth + 1])) {
-						array_push($stack, array($elements['children'], $depth + 1));
+					// traverse
+					if (!empty($elements['children']) && isset($aco[$level + 1])) {
+						array_push($stack, array($elements['children'], $level + 1));
 					}
 				}	
 			}
 		}
 
-		// overwrite ?
-		foreach ($aco as $node) {
-			if (empty($tree[$node])) {
-				break;
-			}
-
-			$element = array('name' => $node);
-
-			if (!empty($tree[$node]['allow'])) {
-				$element['allow'] = $tree[$node]['allow'];
-			}
-
-			if (!empty($tree[$node]['deny'])) {
-				$element['deny'] = $tree[$node]['deny'];
-			}
-
-			$path[] = $element;
-
-			if (empty($tree[$node]['children'])) {
-				break;
-			}
-
-			$tree = &$tree[$node]['children'];
-		}
-		
 		return $path;
 	}
 
 
+/**
+ * add $aro to the allow section of aco
+ *
+ * @return 
+ */
 	public function allow($aro, $aco, $action) {
 		$aco = $this->resolve($aco);
 		$tree = &$this->tree;
@@ -269,7 +256,7 @@ class IniAco {
 	}
 
 /**
- * return path from ACO string
+ * resolve given ACO string to a path
  *
  * @return array path
  */
@@ -277,8 +264,14 @@ class IniAco {
 		return array_map('trim', explode('/', $aco));
 	}
 
-	public function build(array $allow, array $deny = array(), array $tree = array()) {
+/**
+ * build a tree representation from the given allow/deny informations for ACO paths
+ *
+ * @return array tree 
+ */
+	public function build(array $allow, array $deny = array()) {
 		$stack = array();
+		$tree = array();
 		$root = &$tree;
 
 		foreach ($allow as $dotPath => $commaSeparatedAros) {

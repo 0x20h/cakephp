@@ -63,11 +63,14 @@ User.jeff 		= Role.manager					; another worker bee
 User.dev		= Role.admin					;
 
 [aco.allow]
-controllers = Role.admin
-controllers.*.manager_* = Role.manager
-controllers.Articles = Role.manager
-controllers.Articles.delete = User.peter
-controllers.Articles.publish = User.peter
+* = User.dev
+controllers.* = Role.admin
+*ontrollers.*.manager_* = Role.manager
+controllers.Articles.* = Role.manager
+controllers.Articles.* = User.peter
+; overwrite the deny rule for Role.manager and allow baz.manager_delete only for jeff
+controllers.baz.manager_delete = User.jeff
+	
 controllers.Reports.view = Role.sales
 
 [aco.deny]
