@@ -75,7 +75,7 @@ class IniReader implements ConfigReaderInterface {
  *     all sections in the ini file.
  */
 	public function __construct($path, $section = null) {
-		$this->_path = $path;
+		$this->_path = rtrim($path, DS) . DS;
 		$this->_section = $section;
 	}
 
@@ -84,10 +84,11 @@ class IniReader implements ConfigReaderInterface {
  *
  * @param string $file Name of the file to read. The chosen file
  *    must be on the reader's path.
+ * @param bool $recursive If true, parse dotted config keys into a recursive array structure using Set::insert
  * @return array
  * @throws ConfigureException
  */
-	public function read($file) {
+	public function read($file, $recursive = true) {
 		$filename = $this->_path . $file;
 		if (!file_exists($filename)) {
 			$filename .= '.ini';
@@ -96,6 +97,15 @@ class IniReader implements ConfigReaderInterface {
 			}
 		}
 		$contents = parse_ini_file($filename, true);
+
+		if ($this->_section && !isset($contents[$this->_section])) {
+			throw new ConfigureException(__d('cake_dev', 'Section "%s" not found in configuration file', $this->_section));
+		}
+
+		if (!$recursive) {
+			return $this->_section ? $contents[$this->_section] : $contents;
+		}
+
 		if (!empty($this->_section) && isset($contents[$this->_section])) {
 			$values = $this->_parseNestedValues($contents[$this->_section]);
 		} else {
@@ -119,19 +129,20 @@ class IniReader implements ConfigReaderInterface {
  * @return array Array of values exploded
  */
 	protected function _parseNestedValues($values) {
+		$parsed = array();
+
 		foreach ($values as $key => $value) {
-			if ($value === '1') {
-				$value = true;
-			}
-			if ($value === '') {
-				$value = false;
-			}
 			if (strpos($key, '.') !== false) {
-				$values = Set::insert($values, $key, $value);
+				$parsed = Set::insert($parsed, $key, $value);
+			} elseif ($value === '1') {
+				$parsed[$key] = true;
+			} elseif ($value === '') {
+				$parsed[$key] = false;
 			} else {
-				$values[$key] = $value;
+				$parsed[$key] = $value;
 			}
 		}
-		return $values;
+		
+		return $parsed;
 	}
 }
