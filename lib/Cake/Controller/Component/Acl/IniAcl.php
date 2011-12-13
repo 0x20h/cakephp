@@ -33,6 +33,13 @@ class IniAcl extends Object implements AclInterface {
  */
 	public $Aco = null;
 
+
+	public function __construct() {
+		$this->options = array(
+			'policy' => self::DENY,
+			'config' => APP . 'Config' . DS . 'acl.ini.php',
+		);
+	}
 /**
  * Initialize method
  *
@@ -40,18 +47,36 @@ class IniAcl extends Object implements AclInterface {
  * @return void
  */
 	public function initialize($Component) {
-		$this->options = array(
-			'policy' => self::DENY,
-			'config' => APP . 'Config' . DS . 'acl.ini.php',
-		);
-
 		if (!empty($Component->settings['ini_acl'])) {
 			$this->options = array_merge($this->options, $Component->settings['ini_acl']);
 		}
 
 		$config = $this->readConfigFile($this->options['config']);
-		$this->Aro = new IniAro($config['aro'], $config['map']);
-		$this->Aco = new IniAco($config['aco.allow'], $config['aco.deny'], $config['map']);
+		$this->build($config);
+	}
+
+
+	public function build($config) {
+		if ($config instanceOf ConfigReaderInterface) {
+			$config = $config->read(basename($this->options['config']), false);
+		}
+
+		if (empty($config['aro'])) {
+			throw new IniAclException(__d('cake_dev','"aro" section not found in configuration.'));
+		}
+
+		if (empty($config['aco.allow']) && empty($config['aco.deny'])) {
+			throw new IniAclException(__d('cake_dev','Neither a "aco.allow" nor a "aco.deny" section were found in configuration.'));
+		}
+
+		$allow = !empty($config['aco.allow']) ? $config['aco.allow'] : array();
+		$deny = !empty($config['aco.deny']) ? $config['aco.deny'] : array();
+		$aro = !empty($config['aro']) ? $config['aro'] : array();
+		$map = !empty($config['map']) ? $config['map'] : array();
+
+		$this->Aro = new IniAro($aro, $map);
+		$this->Aco = new IniAco($allow, $deny);
+
 	}
 
 /**
@@ -63,7 +88,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function allow($aro, $aco, $action = "*") {
-		return $this->Aco->allow($aro, $aco, $action);
+		return $this->Aco->allow($this->Aro->resolve($aro), $aco, $action);
 	}
 
 /**
@@ -111,7 +136,7 @@ class IniAcl extends Object implements AclInterface {
 
 		foreach ($path as $depth => $node) {
 			foreach ($prioritizedAros as $aros) {
-				if (!empty($node['allow'])) {			
+				if (!empty($node['allow'])) {
 					$allow = $allow || count(array_intersect($node['allow'], $aros)) > 0;
 				}
 
@@ -161,7 +186,7 @@ class IniAco {
 
 	public function node($aco) {
 		$aco = $this->resolve($aco);
-		$tree = &$this->tree;
+		$tree = $this->tree;
 		$depth = count($aco);
 		
 		foreach ($aco as $i => $node) {
@@ -185,7 +210,7 @@ class IniAco {
 		$aco = $this->resolve($aco);
 		$path = array();
 		$level = 0;
-		$root = &$this->tree;
+		$root = $this->tree;
 		
 		// add allow/deny rules from matchable nodes
 		$stack = array(array($root, 0));
@@ -235,23 +260,25 @@ class IniAco {
  */
 	public function allow($aro, $aco, $action) {
 		$aco = $this->resolve($aco);
-		$tree = &$this->tree;
 		$depth = count($aco);
+		$tree = $this->tree;
+		$root = &$tree;
 		
 		foreach ($aco as $i => $node) {
-			if (!isset($tree[$node])) {
-				$tree[$node]  = array(
+			if (!isset($root[$node])) {
+				$root[$node]  = array(
 					'children' => array(),
 				);
 			}
 
 			if ($i < $depth - 1) {
-				$tree = &$tree[$node]['children'];
+				$root = &$root[$node]['children'];
 			} else {
-				$tree[$node]['allow'][] = $aro;
+				$root[$node]['allow'][] = $aro;
 			}
 		}
 
+		$this->tree = &$tree;
 		return true;
 	}
 
@@ -287,7 +314,7 @@ class IniAco {
 				}
 
 				// keep reference to leaf node
-				if ($i + 1 < $depth) {
+				if ($i < $depth - 1) {
 					$tree = &$tree[$node]['children'];
 				}
 			}
@@ -330,7 +357,8 @@ class IniAco {
  */
 class IniAro {
 	public $map = array(
-		'User' => 'User.username'
+		'User' => 'User.username',
+		'Role' => 'User.role'
 	);
 
 	public function __construct(array $aro = array(), array $map = array()) {
@@ -366,23 +394,27 @@ class IniAro {
  * @return string dot separated aro string (e.g. User.jeff)
  */
 	public function resolve($aro) {
-		if (is_string($aro)) {
-			return 'User.'.$aro;
-		}
-
-		if (isset($aro['model']) && isset($aro['foreign_key'])) {
-			return $aro['model'] . '.' . $aro['foreign_key'];
-		}
-
 		foreach ($this->map as $aroGroup => $map) {
 			list ($model, $field) = explode('.', $map);
-		
-			if (isset($aro['model']) && isset($aro['foreign_key'])) {
-				return $aro['model'] .  '.' . $aro['foreign_key'];
+			
+			if (is_array($aro) && isset($aro['model']) && isset($aro['foreign_key'])) {
+				return $aroGroup .  '.' . $aro['foreign_key'];
 			}
 			
 			if (isset($aro[$model][$field])) {
-				return $model . '.' . $aro[$model][$field];
+				return $aroGroup . '.' . $aro[$model][$field];
+			}
+
+			if (is_string($aro)) {
+				if (strpos($aro, '.') === false) {
+					return $aroGroup . '.' . $aro;
+				}
+
+				list($aroModel, $aroValue) =  explode('.', $aro);
+
+				if ($aroModel == $model || $aroModel == $aroGroup) {
+					return $aroGroup . '.' . $aroValue;
+				}
 			}
 		}
 

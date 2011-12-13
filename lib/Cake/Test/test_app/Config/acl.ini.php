@@ -20,41 +20,55 @@
 ; */
 
 ;-------------------------------------
-;Users
+; AROs
 ;-------------------------------------
 
-[admin]
-groups = administrators
-allow =
-deny = ads
+[aro]
+Role.admin = null
+Role.data_aqcuirer = null
+Role.accounting = null
+Role.database_manager = null
+Role.data_analyst = Role.data_acquirer, Role.database_manager
+Role.reports = Role.data_analyst
+Role.sales = null
+Role.manager = Role.accounting, Role.sales
+Role.accounting_manager = Role.accounting
 
-[paul]
-groups = users
-allow =
-deny =
+;# managers
+User.hardy = Role.accounting_manager, Role.reports		;uber boss
+User.stan = Role.manager								;assistant
 
-[jenny]
-groups = users
-allow = ads
-deny = images, files
+;# accountants
+User.peter = Role.accounting
+User.jeff = Role.accounting
 
-[nobody]
-groups = anonymous
-allow =
-deny =
-
+;# admins
+User.jan = Role.admin
+;# database
+User.db_manager_1 = Role.database_manager
+User.db_manager_2 = Role.database_manager
 ;-------------------------------------
-;Groups
+; ACOs
 ;-------------------------------------
 
-[administrators]
-deny =
-allow = posts, comments, images, files, stats, ads
+[aco.allow]
+* = Role.admin
 
-[users]
-allow = posts, comments, images, files
-deny = stats, ads
+controllers.*.manager_* = Role.manager
 
-[anonymous]
-allow =
-deny = posts, comments, images, files, stats, ads
+controllers.reports.* = Role.sales
+controllers.reports.invoices = Role.accounting
+
+controllers.invoices.* = Role.accounting
+controllers.invoices.edit = User.db_manager_2
+
+controllers.users.* = Role.manager, User.peter
+
+controllers.db.* = Role.database_manager
+
+controllers.forms.new = Role.data_acquirer
+
+[aco.deny]
+; accountants and sales should not delete anything
+controllers.*.delete = Role.sales, Role.accounting
+controllers.db.drop = User.db_manager_2

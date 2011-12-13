@@ -46,9 +46,9 @@ class IniReaderTest extends CakeTestCase {
 		$reader = new IniReader($this->path);
 		$config = $reader->read('acl.ini.php');
 
-		$this->assertTrue(isset($config['admin']));
-		$this->assertTrue(isset($config['paul']['groups']));
-		$this->assertEquals('ads', $config['admin']['deny']);
+		$this->assertTrue(isset($config['aro']));
+		$this->assertTrue(isset($config['aro']['Role']['manager']));
+		$this->assertEquals('Role.admin', $config['aco.allow']['*']);
 	}
 
 /**
@@ -57,11 +57,11 @@ class IniReaderTest extends CakeTestCase {
  * @return void
  */
 	public function testReadingOnlyOneSection() {
-		$reader = new IniReader($this->path, 'admin');
+		$reader = new IniReader($this->path, 'aco.allow');
 		$config = $reader->read('acl.ini.php');
 
-		$this->assertTrue(isset($config['groups']));
-		$this->assertEquals('administrators', $config['groups']);
+		$this->assertTrue(isset($config['controllers']['*']['manager_*']));
+		$this->assertEquals('Role.manager', $config['controllers']['*']['manager_*']);
 	}
 
 /**
