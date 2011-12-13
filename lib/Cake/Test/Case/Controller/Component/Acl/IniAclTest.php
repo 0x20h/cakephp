@@ -107,6 +107,9 @@ class IniAclTest extends CakeTestCase {
 		$this->assertTrue($this->IniAcl->allow('jeff', 'foo/bar'));
 		$this->assertTrue($this->IniAcl->check('jeff', 'foo/bar'));
 		$this->assertFalse($this->IniAcl->check('peter', 'foo/bar'));
+		$this->assertFalse($this->IniAcl->check('peter', 'foo/bar'));
+		$this->assertFalse($this->IniAcl->check('hardy', 'foo/bar'));
+
 		$this->assertTrue($this->IniAcl->allow('Role.accounting', 'foo/bar'));
 		$this->assertTrue($this->IniAcl->check('peter', 'foo/bar'));
 		$this->assertTrue($this->IniAcl->check('hardy', 'foo/bar'));
