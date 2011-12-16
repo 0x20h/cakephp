@@ -68,6 +68,11 @@ controllers.db.* = Role.database_manager
 
 controllers.forms.new = Role.data_acquirer
 
+rules.custom.* = User.stan
+rules.custom.sendInvoiceMails = User.peter, User.hardy
+
+rules.custom.user.resetPassword = User.jan, User.jeff
+
 [aco.deny]
 ; accountants and sales should not delete anything
 controllers.*.delete = Role.sales, Role.accounting

@@ -167,11 +167,6 @@ class AclComponent extends Component {
 		trigger_error(__d('cake_dev', 'AclComponent::revoke() is deprecated, use deny() instead'), E_USER_WARNING);
 		return $this->_Instance->deny($aro, $aco, $action);
 	}
-
-
-	public function tree($class, $identifier = '') {
-		return $this->_Instance->tree($class, $identifier);
-	}
 }
 
 /**
@@ -227,13 +222,4 @@ interface AclInterface {
  * @param AclComponent $component
  */
 	public function initialize($component);
-
-/**
- * return ACL tree for the given class and identifier
- *
- * @param string $class class (Aco, Aro)
- * @param string $identifier e.g. User.Foo
- * @return array tree structure
- */
-	public function tree($class, $identifier = '');
 }

@@ -51,7 +51,9 @@ class IniAcl extends Object implements AclInterface {
 			$this->options = array_merge($this->options, $Component->settings['ini_acl']);
 		}
 
-		$config = $this->readConfigFile($this->options['config']);
+		App::uses('IniReader', 'Configure');
+		$Reader = new IniReader(dirname($this->options['config']));
+		$config = $Reader->read(basename($this->options['config']), false);
 		$this->build($config);
 	}
 
@@ -88,11 +90,11 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function allow($aro, $aco, $action = "*") {
-		return $this->Aco->allow($this->Aro->resolve($aro), $aco, $action);
+		return $this->Aco->access($this->Aro->resolve($aro), $aco, $action, 'allow');
 	}
 
 /**
- * No op method, deny cannot be done with IniAcl
+ * deny ARO access to ACO
  *
  * @param string $aro ARO The requesting object identifier.
  * @param string $aco ACO The controlled object identifier.
@@ -100,7 +102,7 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function deny($aro, $aco, $action = "*") {
-		return $this->Aco->deny($aro, $aco, $action);
+		return $this->Aco->access($this->Aro->resolve($aro), $aco, $action, 'deny');
 	}
 
 /**
@@ -112,7 +114,6 @@ class IniAcl extends Object implements AclInterface {
  * @return boolean Success
  */
 	public function inherit($aro, $aco, $action = "*") {
-		$this->Aco->inherit($aro, $aco, $action);
 	}
 
 /**
@@ -148,25 +149,6 @@ class IniAcl extends Object implements AclInterface {
 
 		return $allow;
 	}
-
-
-/**
- * Parses an INI file and returns an array that reflects the INI file's section structure. Double-quote friendly.
- *
- * @param string $filename File
- * @return array INI section structure
- */
-	public function readConfigFile($filename) {
-		$sections = parse_ini_file($filename, true);
-		return $sections;
-	}
-	
-	
-	public function tree($class, $identifier = '') {
-		debug($class);
-		debug($identifier);
-		return $this->$class->node($identifier);
-	}
 }
 
 /**
@@ -176,29 +158,12 @@ class IniAcl extends Object implements AclInterface {
 class IniAco {
 
 	public static $modifiers = array(
-		'*' => '.*',
-		'?' => '.?',
+		'*'  => '.*',
+		'?'  => '.?',
 	);
 
 	public function __construct(array $allow = array(), array $deny = array()) {
 		$this->tree = $this->build($allow, $deny);
-	}
-
-	public function node($aco) {
-		$aco = $this->resolve($aco);
-		$tree = $this->tree;
-		$depth = count($aco);
-		
-		foreach ($aco as $i => $node) {
-			if (!isset($tree[$node])) {
-				return false;
-			}
-			if ($i < $depth - 1) {
-				$tree = &$tree[$node]['children'];
-			}
-		}
-
-		return $tree;
 	}
 
 /**
@@ -254,31 +219,35 @@ class IniAco {
 
 
 /**
- * add $aro to the allow section of aco
+ * allow/deny ARO access to ARO
  *
- * @return 
+ * @return bool 
  */
-	public function allow($aro, $aco, $action) {
+	public function access($aro, $aco, $action, $type = 'deny') {
 		$aco = $this->resolve($aco);
 		$depth = count($aco);
-		$tree = $this->tree;
-		$root = &$tree;
+		$root = $this->tree;
+		$tree = &$root;
 		
 		foreach ($aco as $i => $node) {
-			if (!isset($root[$node])) {
-				$root[$node]  = array(
+			if (!isset($tree[$node])) {
+				$tree[$node]  = array(
 					'children' => array(),
 				);
 			}
 
 			if ($i < $depth - 1) {
-				$root = &$root[$node]['children'];
+				$tree = &$tree[$node]['children'];
 			} else {
-				$root[$node]['allow'][] = $aro;
+				if (empty($tree[$node][$type])) {
+					$tree[$node][$type] = array();
+				}
+
+				$tree[$node][$type] = array_merge(array($aro), $tree[$node][$type]);
 			}
 		}
 
-		$this->tree = &$tree;
+		$this->tree = &$root;
 		return true;
 	}
 
@@ -288,7 +257,8 @@ class IniAco {
  * @return array path
  */
 	public function resolve($aco) {
-		return array_map('trim', explode('/', $aco));
+		$char = strpos($aco, '.') ? '.' : '/';
+		return array_map('trim', explode($char, $aco));
 	}
 
 /**
@@ -358,7 +328,7 @@ class IniAco {
 class IniAro {
 	public $map = array(
 		'User' => 'User.username',
-		'Role' => 'User.role'
+		'Role' => 'Role.name'
 	);
 
 	public function __construct(array $aro = array(), array $map = array()) {
@@ -366,7 +336,17 @@ class IniAro {
 		$this->tree = $this->build($aro);
 	}
 
-	
+
+/**
+ * From the perspective of the given ARO, walk down the tree and
+ * collect all inherited AROs levelwise such that AROs from different
+ * branches with equal distance to the requested ARO will be collected at the same
+ * index. The resulting array will contain a prioritized list of (list of) roles ordered from 
+ * the most distant AROs to the requested one itself.
+ * 
+ * @param mixed $aro An ARO identifier
+ * @return array prioritized AROs
+ */
 	public function roles($aro) {
 		$aros = array();
 		$aro = $this->resolve($aro);
@@ -389,15 +369,17 @@ class IniAro {
 
 
 /**
- * return pathes to the given ARO
+ * resolve an ARO identifier to an internal ARO string using
+ * the internal mapping information
  *
- * @return string dot separated aro string (e.g. User.jeff)
+ * @param mixed $aro ARO identifier (User.jeff, array('User' => ...), etc)
+ * @return string dot separated aro string (e.g. User.jeff, Role.admin)
  */
 	public function resolve($aro) {
 		foreach ($this->map as $aroGroup => $map) {
 			list ($model, $field) = explode('.', $map);
-			
-			if (is_array($aro) && isset($aro['model']) && isset($aro['foreign_key'])) {
+
+			if (is_array($aro) && isset($aro['model']) && isset($aro['foreign_key']) && $aro['model']  == $aroGroup) {
 				return $aroGroup .  '.' . $aro['foreign_key'];
 			}
 			
@@ -411,18 +393,24 @@ class IniAro {
 				}
 
 				list($aroModel, $aroValue) =  explode('.', $aro);
-
+				
 				if ($aroModel == $model || $aroModel == $aroGroup) {
 					return $aroGroup . '.' . $aroValue;
 				}
 			}
 		}
 
-		trigger_error('no map entry found in aro:'.print_r($aro, true), E_USER_WARNING);
+		new IniAroException(__d('cake_core', 'no map entry found in aro:'.print_r($aro, true)));
 	}
 
 
-	public function build(array $sections, $prefix = '') {
+/**
+ * build an ARO tree structure for internal processing
+ *
+ * @param array $sections ini file  
+ * @return array ARO tree
+ */
+	public function build(array $sections) {
 		$tree = array();
 		$root = &$tree;
 
@@ -443,3 +431,7 @@ class IniAro {
 		return $tree;
 	}
 }
+
+class IniAclException extends Exception {}
+class IniAroException extends IniAclException {}
+class IniAcoException extends IniAclException {}

@@ -50,7 +50,7 @@
 ; define mapping 
 [map]
 User = User.username
-Role = User.role
+Role = Role.name
 
 [aro]
 Role.admin 		= null							; root aro
