@@ -280,7 +280,9 @@ class IniAco {
 /**
  * build a tree representation from the given allow/deny informations for ACO paths
  *
- * @return array tree 
+ * @param array $allow ACO allow rules
+ * @param array $deny ACO deny rules
+ * @return void 
  */
 	public function build(array $allow, array $deny = array()) {
 		$stack = array();
@@ -391,7 +393,7 @@ class IniAro {
  * build an ARO tree structure for internal processing
  *
  * @param array $sections ini file  
- * @return array ARO tree
+ * @return void 
  */
 	public function build(array $sections) {
 		$tree = array();
