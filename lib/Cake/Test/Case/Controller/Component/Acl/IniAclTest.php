@@ -56,7 +56,7 @@ class IniAclTest extends CakeTestCase {
 	}
 
 
-	public function testMapDeterminesAroResolve() {
+	public function testAroResolve() {
 		$map = $this->IniAcl->Aro->map;
 		$this->IniAcl->Aro->map = array(
 			'User' => 'FooModel.nickname',
@@ -165,5 +165,14 @@ class IniAclTest extends CakeTestCase {
 		$this->IniAcl->allow('stan', 'controllers/reports/delete');
 		$this->assertFalse($this->IniAcl->check('stan', 'controllers/reports/delete'));
 	}
+
+
+	/**
+	 * @TODO
+	 */
+	public function testInvalidConfig() {}
+	public function testAcoResolve() {}
+	public function testAroDeclarationContainsCycles() {}
+	public function testPolicy() {}
 }
 

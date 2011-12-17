@@ -106,7 +106,7 @@ class IniAcl extends Object implements AclInterface {
 	}
 
 /**
- * No op method, inherit cannot be done with IniAc
+ * No op method, inherit cannot be done with IniAcl
  *
  * @param string $aro ARO The requesting object identifier.
  * @param string $aco ACO The controlled object identifier.
@@ -157,17 +157,29 @@ class IniAcl extends Object implements AclInterface {
  */
 class IniAco {
 
+/**
+ * holds internal ACO representation
+ *
+ * @var array
+ */
+	protected $tree = array();
+
+/**
+ * map modifiers for ACO paths to their respective PCRE pattern
+ * 
+ * @var array
+ */
 	public static $modifiers = array(
-		'*'  => '.*',
-		'?'  => '.?',
+		'*' => '.*',
+		'?' => '.?',
 	);
 
 	public function __construct(array $allow = array(), array $deny = array()) {
-		$this->tree = $this->build($allow, $deny);
+		$this->build($allow, $deny);
 	}
 
 /**
- * return path to aco with allow and deny rules for each level as array
+ * return path to the requested ACO with allow and deny rules for each level
  *
  * @return array
  */
@@ -221,7 +233,7 @@ class IniAco {
 /**
  * allow/deny ARO access to ARO
  *
- * @return bool 
+ * @return void 
  */
 	public function access($aro, $aco, $action, $type = 'deny') {
 		$aco = $this->resolve($aco);
@@ -243,20 +255,24 @@ class IniAco {
 					$tree[$node][$type] = array();
 				}
 
-				$tree[$node][$type] = array_merge(array($aro), $tree[$node][$type]);
+				$tree[$node][$type] = array_merge(is_array($aro) ? $aro : array($aro), $tree[$node][$type]);
 			}
 		}
 
 		$this->tree = &$root;
-		return true;
 	}
 
 /**
  * resolve given ACO string to a path
  *
+ * @param string $aco ACO string
  * @return array path
  */
 	public function resolve($aco) {
+		if (is_array($aco)) {
+			return $aco;
+		}
+
 		$char = strpos($aco, '.') ? '.' : '/';
 		return array_map('trim', explode($char, $aco));
 	}
@@ -268,54 +284,19 @@ class IniAco {
  */
 	public function build(array $allow, array $deny = array()) {
 		$stack = array();
+		$this->tree = array();
 		$tree = array();
 		$root = &$tree;
 
 		foreach ($allow as $dotPath => $commaSeparatedAros) {
-			$path = array_map('trim', explode('.', $dotPath));
 			$aros = array_map('trim', explode(',', $commaSeparatedAros));
-			$depth = count($path);
-
-			foreach ($path as $i => $node) {
-				if (!isset($tree[$node]['children'])) {
-					$tree[$node] = array(
-						'children' => array(),
-					);
-				}
-
-				// keep reference to leaf node
-				if ($i < $depth - 1) {
-					$tree = &$tree[$node]['children'];
-				}
-			}
-
-			$tree[$node]['allow'] = $aros;
-			$tree = &$root;
-		}
-		
-		foreach ($deny as $dotPath => $commaSeparatedAros) {
-			$path = array_map('trim', explode('.', $dotPath));
-			$aros = array_map('trim', explode(',', $commaSeparatedAros));
-			$depth = count($path);
-
-			foreach ($path as $i => $node) {
-				if (!isset($tree[$node]['children'])) {
-					$tree[$node] = array(
-						'children' => array(),
-					);
-				}
-
-				// keep reference to leaf node
-				if ($i + 1 < $depth) {
-					$tree = &$tree[$node]['children'];
-				}
-			}
-			
-			$tree[$node]['deny'] = $aros;
-			$tree = &$root;
+			$this->access($aros, $dotPath, null, 'allow');
 		}
 	
-		return $tree;
+		foreach ($deny as $dotPath => $commaSeparatedAros) {
+			$aros = array_map('trim', explode(',', $commaSeparatedAros));
+			$this->access($aros, $dotPath, null, 'deny');
+		}
 	}
 
 
@@ -331,9 +312,11 @@ class IniAro {
 		'Role' => 'Role.name'
 	);
 
+	protected $tree = array();
+
 	public function __construct(array $aro = array(), array $map = array()) {
 		!empty($map) && $this->map = $map;
-		$this->tree = $this->build($aro);
+		$this->build($aro);
 	}
 
 
@@ -428,7 +411,7 @@ class IniAro {
 			}
 		}
 
-		return $tree;
+		$this->tree = $tree;
 	}
 }
 
