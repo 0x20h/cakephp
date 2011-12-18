@@ -182,12 +182,53 @@ class IniAclTest extends CakeTestCase {
 		$this->assertFalse($this->IniAcl->check('stan', 'controllers/reports/delete'));
 	}
 
-	/**
-	 * @TODO
-	 */
-	public function testInvalidConfig() {}
-	public function testAcoResolve() {}
-	public function testAroDeclarationContainsCycles() {}
+	
+	public function testInvalidConfigWithAroMissing() {
+		$this->setExpectedException(
+			'IniAclException',
+			'"aro" section not found in configuration'
+		);
+		$config = array();
+		$this->IniAcl->build($config);
+
+		
+		$this->setExpectedException(
+			'IniAclException',
+			'Neither a "aco.allow" nor a "aco.deny" section was found in configuration.'
+		);
+
+		$config = array(
+			'aro' => array('Role.foo' => null),
+		);
+
+		$this->IniAcl->build($config);
+	}
+
+	public function testAcoResolve() {
+		$this->assertEquals(array('foo', 'bar'), $this->IniAcl->Aco->resolve('foo/bar'));
+		$this->assertEquals(array('foo', 'bar'), $this->IniAcl->Aco->resolve('foo.bar'));
+		$this->assertEquals(array('foo', 'bar', 'baz'), $this->IniAcl->Aco->resolve('foo/bar/baz'));
+		$this->assertEquals(array('foo', '*-bar', '?-baz'), $this->IniAcl->Aco->resolve('foo.*-bar.?-baz'));
+	}
+
+	public function testAroDeclarationContainsCycles() {
+		$config = array(
+			'aro' => array(
+				'Role.a' => null,
+				'Role.b' => 'User.b',
+				'User.a' => 'Role.a, Role.b',
+				'User.b' => 'User.a',
+
+			),
+			'aco.allow' => array(
+				'*' => 'Role.a',
+			),
+		);
+
+		$this->expectException('IniAroException', 'cycle detected');
+		$this->IniAcl->build($config);
+	}
+
 	public function testPolicy() {}
 }
 

@@ -68,7 +68,7 @@ class IniAcl extends Object implements AclInterface {
 		}
 
 		if (empty($config['aco.allow']) && empty($config['aco.deny'])) {
-			throw new IniAclException(__d('cake_dev','Neither a "aco.allow" nor a "aco.deny" section were found in configuration.'));
+			throw new IniAclException(__d('cake_dev','Neither a "aco.allow" nor a "aco.deny" section was found in configuration.'));
 		}
 
 		$allow = !empty($config['aco.allow']) ? $config['aco.allow'] : array();
