@@ -65,8 +65,8 @@ controllers.invoices.edit = User.db_manager_2
 controllers.users.* = Role.manager, User.peter
 
 controllers.db.* = Role.database_manager
-
-controllers.forms.new = Role.data_acquirer
+; test for case insensitivity
+controllers.Forms.NEW = Role.data_acquirer
 
 rules.custom.* = User.stan
 rules.custom.sendInvoiceMails = User.peter, User.hardy

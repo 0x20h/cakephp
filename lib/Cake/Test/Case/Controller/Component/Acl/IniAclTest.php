@@ -122,6 +122,14 @@ class IniAclTest extends CakeTestCase {
 	}
 
 
+	public function testCheckCaseInsensitive() {
+		$this->assertTrue($this->IniAcl->check('hardy', 'controllers/forms/new'));
+		$this->assertTrue($this->IniAcl->check('Role.data_acquirer', 'controllers/forms/new'));
+		$this->assertTrue($this->IniAcl->check('hardy', 'controllers/FORMS/NEW'));
+		$this->assertTrue($this->IniAcl->check('Role.data_acquirer', 'controllers/FORMS/NEW'));
+	}
+
+
 	public function testAllow() {
 		$this->assertFalse($this->IniAcl->check('jeff', 'foo/bar'));
 
