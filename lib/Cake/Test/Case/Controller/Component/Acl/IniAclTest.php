@@ -188,10 +188,13 @@ class IniAclTest extends CakeTestCase {
 			'IniAclException',
 			'"aro" section not found in configuration'
 		);
-		$config = array();
+		$config = array('aco.allow' => array('foo' => ''));
 		$this->IniAcl->build($config);
 
-		
+	}
+
+	
+	public function testInvalidConfigWithAcosMissing() {
 		$this->setExpectedException(
 			'IniAclException',
 			'Neither a "aco.allow" nor a "aco.deny" section was found in configuration.'
@@ -225,7 +228,7 @@ class IniAclTest extends CakeTestCase {
 			),
 		);
 
-		$this->expectException('IniAroException', 'cycle detected');
+		$this->expectException('IniAroException', 'cycle detected when inheriting User.b from User.a');
 		$this->IniAcl->build($config);
 	}
 

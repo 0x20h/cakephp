@@ -420,27 +420,33 @@ class IniAro {
  * @return void
  */
 	public function addRole(array $aro) {
-		$tree = &$this->tree;
-
 		foreach ($aro as $role => $commaSeparatedDeps) {
-			if (in_array($role, array_keys($this->tree))) {
-				trigger_error(__d('role %s already present', $role));
-				continue;
-			}
-
-			if (!isset($tree[$role])) {
-				$tree[$role] = array();
+			if (!isset($this->tree[$role])) {
+				$this->tree[$role] = array();
 			}
 
 			if ($commaSeparatedDeps) {
 				$deps = array_map('trim', explode(',', $commaSeparatedDeps));
 				
 				foreach ($deps as $dependency) {
-					if (!isset($tree[$dependency])) {
-						$tree[$dependency] = array();
+					// detect cycles
+					$roles = $this->roles($dependency);
+					
+					if (in_array($role, Set::flatten($roles))) {
+						$path = '';
+
+						foreach ($roles as $roleDependencies) {
+							$path .= implode('|', (array)$roleDependencies) . ' -> ';
+						}
+
+						throw new IniAroException('cycle detected when inheriting '.$role.' from '.$dependency.'. Path: '.$path.$role);
 					}
 					
-					$tree[$dependency][] = $role;
+					if (!isset($this->tree[$dependency])) {
+						$this->tree[$dependency] = array();
+					}
+					
+					$this->tree[$dependency][] = $role;
 				}
 			}
 		}
