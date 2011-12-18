@@ -309,11 +309,30 @@ class IniAco {
  *
  */
 class IniAro {
+
+/**
+ * role to resolve to when a provided ARO is not listed in 
+ * the internal tree
+ *
+ * @var string
+ */
+	const DEFAULT_ROLE = 'Role.default';
+
+/**
+ * map external identifiers
+ *
+ * @var array
+ */
 	public $map = array(
 		'User' => 'User.username',
 		'Role' => 'Role.name'
 	);
 
+/**
+ * internal ARO representation
+ *
+ * @var array
+ */
 	protected $tree = array();
 
 	public function __construct(array $aro = array(), array $map = array()) {
@@ -363,29 +382,68 @@ class IniAro {
 	public function resolve($aro) {
 		foreach ($this->map as $aroGroup => $map) {
 			list ($model, $field) = explode('.', $map);
+			$mapped = '';
 
-			if (is_array($aro) && isset($aro['model']) && isset($aro['foreign_key']) && $aro['model']  == $aroGroup) {
-				return $aroGroup .  '.' . $aro['foreign_key'];
-			}
-			
-			if (isset($aro[$model][$field])) {
-				return $aroGroup . '.' . $aro[$model][$field];
-			}
-
-			if (is_string($aro)) {
-				if (strpos($aro, '.') === false) {
-					return $aroGroup . '.' . $aro;
+			if (is_array($aro)) {
+				if (isset($aro['model']) && isset($aro['foreign_key']) && $aro['model'] == $aroGroup) {
+					$mapped = $aroGroup .  '.' . $aro['foreign_key'];
 				}
-
-				list($aroModel, $aroValue) =  explode('.', $aro);
 				
-				if ($aroModel == $model || $aroModel == $aroGroup) {
-					return $aroGroup . '.' . $aroValue;
+				if (isset($aro[$model][$field])) {
+					$mapped = $aroGroup . '.' . $aro[$model][$field];
 				}
+			} elseif (is_string($aro)) {
+				if (strpos($aro, '.') === false) {
+					$mapped = $aroGroup . '.' . $aro;
+				} else {
+					list($aroModel, $aroValue) =  explode('.', $aro);			
+
+					if ($aroModel == $model || $aroModel == $aroGroup) {
+						$mapped = $aroGroup . '.' . $aroValue;
+					}
+				}
+			}
+
+			if (in_array($mapped, array_keys($this->tree))) {
+				return $mapped;
 			}
 		}
 
-		new IniAroException(__d('cake_core', 'no map entry found in aro:'.print_r($aro, true)));
+		return self::DEFAULT_ROLE;
+	}
+
+
+/**
+ * adds a new ARO to the tree
+ *
+ * @param array $aro one or more ARO records
+ * @return void
+ */
+	public function addRole(array $aro) {
+		$tree = &$this->tree;
+
+		foreach ($aro as $role => $commaSeparatedDeps) {
+			if (in_array($role, array_keys($this->tree))) {
+				trigger_error(__d('role %s already present', $role));
+				continue;
+			}
+
+			if (!isset($tree[$role])) {
+				$tree[$role] = array();
+			}
+
+			if ($commaSeparatedDeps) {
+				$deps = array_map('trim', explode(',', $commaSeparatedDeps));
+				
+				foreach ($deps as $dependency) {
+					if (!isset($tree[$dependency])) {
+						$tree[$dependency] = array();
+					}
+					
+					$tree[$dependency][] = $role;
+				}
+			}
+		}
 	}
 
 
@@ -395,25 +453,9 @@ class IniAro {
  * @param array $sections ini file  
  * @return void 
  */
-	public function build(array $sections) {
-		$tree = array();
-		$root = &$tree;
-
-		foreach ($sections as $node => $commaSeparatedDeps) {
-			if ($commaSeparatedDeps) {
-				$deps = array_map('trim', explode(',', $commaSeparatedDeps));
-				
-				foreach ($deps as $dependency) {
-					if (!isset($tree[$dependency])) {
-						$tree[$dependency] = array();
-					}
-					
-					$tree[$dependency][] = $node;
-				}
-			}
-		}
-
-		$this->tree = $tree;
+	public function build(array $aros) {
+		$this->tree = array();
+		$this->addRole($aros);
 	}
 }
 

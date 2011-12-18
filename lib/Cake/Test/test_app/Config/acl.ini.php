@@ -25,7 +25,7 @@
 
 [aro]
 Role.admin = null
-Role.data_aqcuirer = null
+Role.data_acquirer = null
 Role.accounting = null
 Role.database_manager = null
 Role.data_analyst = Role.data_acquirer, Role.database_manager

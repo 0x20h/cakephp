@@ -49,12 +49,17 @@ class IniAclTest extends CakeTestCase {
 
 		$roles = $this->IniAcl->Aro->roles('hardy');
 		$this->assertEquals(array('Role.database_manager', 'Role.data_acquirer'), $roles[0]);
-		$this->assertEquals(array('Role.data_analyst', 'Role.accounting'), $roles[1]);
+		$this->assertEquals(array('Role.accounting', 'Role.data_analyst'), $roles[1]);
 		$this->assertTrue(in_array('Role.accounting_manager', $roles[2]));
 		$this->assertTrue(in_array('Role.reports', $roles[2]));
 		$this->assertTrue(in_array('User.hardy', $roles[3]));
 	}
 
+	public function testAddRole() {
+		$this->assertEquals(array(array(IniAro::DEFAULT_ROLE)), $this->IniAcl->Aro->roles('foobar'));
+		$this->IniAcl->Aro->addRole(array('User.foobar' => 'Role.accounting'));
+		$this->assertEquals(array(array('Role.accounting'), array('User.foobar')), $this->IniAcl->Aro->roles('foobar'));
+	}
 
 	public function testAroResolve() {
 		$map = $this->IniAcl->Aro->map;
@@ -69,9 +74,12 @@ class IniAclTest extends CakeTestCase {
 		$this->assertEquals('Role.admin', $this->IniAcl->Aro->resolve(array('FooModel' => array('role' => 'admin'))));
 		$this->assertEquals('Role.admin', $this->IniAcl->Aro->resolve('Role.admin'));
 		
-		$this->assertEquals('User.admin', $this->IniAcl->Aro->resolve('admin'));
-		$this->assertEquals('User.admin', $this->IniAcl->Aro->resolve('FooModel.admin'));
+		$this->assertEquals('Role.admin', $this->IniAcl->Aro->resolve('admin'));
+		$this->assertEquals('Role.admin', $this->IniAcl->Aro->resolve('FooModel.admin'));
+		$this->assertEquals('Role.accounting', $this->IniAcl->Aro->resolve('accounting'));
 
+		$this->assertEquals(IniAro::DEFAULT_ROLE, $this->IniAcl->Aro->resolve('bla'));
+		$this->assertEquals(IniAro::DEFAULT_ROLE, $this->IniAcl->Aro->resolve(array('FooModel' => array('role' => 'hardy'))));
 		$this->IniAcl->Aro->map = $map;
 	}
 
@@ -165,7 +173,6 @@ class IniAclTest extends CakeTestCase {
 		$this->IniAcl->allow('stan', 'controllers/reports/delete');
 		$this->assertFalse($this->IniAcl->check('stan', 'controllers/reports/delete'));
 	}
-
 
 	/**
 	 * @TODO
