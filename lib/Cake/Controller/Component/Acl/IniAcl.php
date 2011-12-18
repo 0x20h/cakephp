@@ -270,11 +270,11 @@ class IniAco {
  */
 	public function resolve($aco) {
 		if (is_array($aco)) {
-			return $aco;
+			return array_map('strtolower', $aco);
 		}
 
 		$char = strpos($aco, '.') ? '.' : '/';
-		return array_map('trim', explode($char, $aco));
+		return array_map('trim', explode($char, strtolower($aco)));
 	}
 
 /**
