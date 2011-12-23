@@ -34,6 +34,20 @@ App::uses('Component', 'Controller');
 class AclComponent extends Component {
 
 /**
+ * ARO Object
+ *
+ * @var Model
+ */
+	public $Aro;
+
+/**
+ * ACO Object
+ *
+ * @var Model
+ */
+	public $Aco;
+
+/**
  * Instance of an ACL class
  *
  * @var AclInterface
