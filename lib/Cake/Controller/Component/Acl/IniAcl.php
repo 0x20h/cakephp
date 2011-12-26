@@ -8,8 +8,8 @@
  */
 class IniAcl extends Object implements AclInterface {
 
-	const DENY = 0;
-	const ALLOW = 1;
+	const DENY = false;
+	const ALLOW = true;
 
 /**
  * Options array 
@@ -37,6 +37,7 @@ class IniAcl extends Object implements AclInterface {
 	public function __construct() {
 		$this->options = array(
 			'policy' => self::DENY,
+			'reader' => 'ini',
 			'config' => APP . 'Config' . DS . 'acl.ini.php',
 		);
 	}
@@ -50,11 +51,14 @@ class IniAcl extends Object implements AclInterface {
 		if (!empty($Component->settings['ini_acl'])) {
 			$this->options = array_merge($this->options, $Component->settings['ini_acl']);
 		}
-
-		App::uses('IniReader', 'Configure');
-		$Reader = new IniReader(dirname($this->options['config']));
+		
+		$readerClass = Inflector::camelize($this->options['reader'].'_reader');
+		App::uses($readerClass, 'Configure');
+		$Reader = new $readerClass(dirname($this->options['config']));
 		$config = $Reader->read(basename($this->options['config']), false);
 		$this->build($config);
+		$Component->Aco = $this->Aco;
+		$Component->Aro = $this->Aro;
 	}
 
 
@@ -78,7 +82,6 @@ class IniAcl extends Object implements AclInterface {
 
 		$this->Aro = new IniAro($aro, $map);
 		$this->Aco = new IniAco($allow, $deny);
-
 	}
 
 /**
@@ -129,6 +132,12 @@ class IniAcl extends Object implements AclInterface {
 	public function check($aro, $aco, $aco_action = null) {
 		$allow = $this->options['policy'];
 		$prioritizedAros = $this->Aro->roles($aro);
+
+		if ($aco_action) {
+			$sep = strpos($aco, '.') ? '.' : '/';
+			$aco .= $sep . $aco_action;
+		}
+
 		$path = $this->Aco->path($aco);	
 		
 		if (empty($path)) {
@@ -240,7 +249,7 @@ class IniAco {
 		$depth = count($aco);
 		$root = $this->tree;
 		$tree = &$root;
-		
+
 		foreach ($aco as $i => $node) {
 			if (!isset($tree[$node])) {
 				$tree[$node]  = array(
@@ -254,7 +263,7 @@ class IniAco {
 				if (empty($tree[$node][$type])) {
 					$tree[$node][$type] = array();
 				}
-
+				
 				$tree[$node][$type] = array_merge(is_array($aro) ? $aro : array($aro), $tree[$node][$type]);
 			}
 		}
@@ -393,10 +402,13 @@ class IniAro {
 					$mapped = $aroGroup . '.' . $aro[$model][$field];
 				}
 			} elseif (is_string($aro)) {
-				if (strpos($aro, '.') === false) {
+				if (strpos($aro, '.') === false && strpos($aro, '/') === false) {
 					$mapped = $aroGroup . '.' . $aro;
 				} else {
-					list($aroModel, $aroValue) =  explode('.', $aro);			
+					$separator = strpos($aro, '.') !== false ? '.' : '/';
+					list($aroModel, $aroValue) =  explode($separator, $aro);
+
+					$aroModel = Inflector::camelize($aroModel);
 
 					if ($aroModel == $model || $aroModel == $aroGroup) {
 						$mapped = $aroGroup . '.' . $aroValue;
