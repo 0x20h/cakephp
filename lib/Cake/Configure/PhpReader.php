@@ -43,7 +43,7 @@ class PhpReader implements ConfigReaderInterface {
 		if (!$path) {
 			$path = APP . 'Config' . DS;
 		}
-		$this->_path = $path;
+		$this->_path = rtrim($path, DS) . DS;
 	}
 
 /**
