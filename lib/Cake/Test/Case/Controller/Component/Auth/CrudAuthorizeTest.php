@@ -56,7 +56,7 @@ class CrudAuthorizeTest extends CakeTestCase {
 /**
  * test authorize() without a mapped action, ensure an error is generated.
  *
- * @expectedException Exception
+ * @expectedException PHPUnit_Framework_Error_Warning
  * @return void
  */
 	public function testAuthorizeNoMappedAction() {
@@ -66,8 +66,7 @@ class CrudAuthorizeTest extends CakeTestCase {
 			'action' => 'foobar'
 		));
 		$user = array('User' => array('user' => 'mark'));
-
-		$this->auth->authorize($user, $request);
+		$this->assertFalse($this->auth->authorize($user, $request));
 	}
 
 /**
