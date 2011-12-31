@@ -68,11 +68,11 @@ class IniAcl extends Object implements AclInterface {
 		}
 
 		if (empty($config['aro'])) {
-			throw new IniAclException(__d('cake_dev','"aro" section not found in configuration.'));
+			throw new AclException(__d('cake_dev','"aro" section not found in configuration.'));
 		}
 
 		if (empty($config['aco.allow']) && empty($config['aco.deny'])) {
-			throw new IniAclException(__d('cake_dev','Neither a "aco.allow" nor a "aco.deny" section was found in configuration.'));
+			throw new AclException(__d('cake_dev','Neither a "aco.allow" nor a "aco.deny" section was found in configuration.'));
 		}
 
 		$allow = !empty($config['aco.allow']) ? $config['aco.allow'] : array();
@@ -451,7 +451,8 @@ class IniAro {
 							$path .= implode('|', (array)$roleDependencies) . ' -> ';
 						}
 
-						throw new IniAroException('cycle detected when inheriting '.$role.' from '.$dependency.'. Path: '.$path.$role);
+						trigger_error(__d('cake_dev', 'cycle detected when inheriting %s from %s. Path: %s', $role, $dependency, $path.$role));
+						continue;
 					}
 					
 					if (!isset($this->tree[$dependency])) {
@@ -476,7 +477,3 @@ class IniAro {
 		$this->addRole($aros);
 	}
 }
-
-class IniAclException extends Exception {}
-class IniAroException extends IniAclException {}
-class IniAcoException extends IniAclException {}

@@ -19,7 +19,6 @@
 
 App::uses('AclComponent', 'Controller/Component');
 App::uses('IniAcl', 'Controller/Component/Acl');
-App::uses('IniReader', 'Configure');
 class_exists('AclComponent');
 
 /**
@@ -189,7 +188,7 @@ class IniAclTest extends CakeTestCase {
 	
 	public function testInvalidConfigWithAroMissing() {
 		$this->setExpectedException(
-			'IniAclException',
+			'AclException',
 			'"aro" section not found in configuration'
 		);
 		$config = array('aco.allow' => array('foo' => ''));
@@ -199,7 +198,7 @@ class IniAclTest extends CakeTestCase {
 	
 	public function testInvalidConfigWithAcosMissing() {
 		$this->setExpectedException(
-			'IniAclException',
+			'AclException',
 			'Neither a "aco.allow" nor a "aco.deny" section was found in configuration.'
 		);
 
@@ -231,7 +230,7 @@ class IniAclTest extends CakeTestCase {
 			),
 		);
 
-		$this->expectException('IniAroException', 'cycle detected when inheriting User.b from User.a');
+		$this->expectError('PHPUnit_Framework_Error', 'cycle detected' /* ... */);
 		$this->IniAcl->build($config);
 	}
 
