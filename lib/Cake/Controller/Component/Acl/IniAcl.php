@@ -134,8 +134,7 @@ class IniAcl extends Object implements AclInterface {
 		$prioritizedAros = $this->Aro->roles($aro);
 
 		if ($aco_action) {
-			$sep = strpos($aco, '.') ? '.' : '/';
-			$aco .= $sep . $aco_action;
+			$aco .= (strpos($aco, '.') ? '.' : '/') . $aco_action;
 		}
 
 		$path = $this->Aco->path($aco);	
