@@ -55,17 +55,17 @@ User.db_manager_2 = Role.database_manager
 * = Role.admin
 
 controllers.*.manager_* = Role.manager
-
 controllers.reports.* = Role.sales
 controllers.reports.invoices = Role.accounting
-
 controllers.invoices.* = Role.accounting
 controllers.invoices.edit = User.db_manager_2
-
 controllers.users.* = Role.manager, User.peter
-
 controllers.db.* = Role.database_manager
-; test for case insensitivity
+controllers.*.add = User.stan
+controllers.*.edit = User.stan
+controllers.*.publish = User.stan
+
+;# test for case insensitivity
 controllers.Forms.NEW = Role.data_acquirer
 
 rules.custom.* = User.stan
@@ -74,6 +74,6 @@ rules.custom.sendInvoiceMails = User.peter, User.hardy
 rules.custom.user.resetPassword = User.jan, User.jeff
 
 [aco.deny]
-; accountants and sales should not delete anything
+;# accountants and sales should not delete anything
 controllers.*.delete = Role.sales, Role.accounting
 controllers.db.drop = User.db_manager_2

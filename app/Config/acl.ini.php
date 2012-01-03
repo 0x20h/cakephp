@@ -21,6 +21,7 @@
 ; acl.ini.php - Cake ACL Configuration
 ; ---------------------------------------------------------------------
 ; Use this file to specify user permissions.
+;
 ; aco = access control object (something you restrict access to in your application)
 ; examples:
 ;	controllers.users.add
@@ -33,21 +34,22 @@
 ;	Department.sales
 ;
 ; define a mapping to resolve AROs. E.g. if check() gets an ARO
-; like array('User' => array('login' => 'foo', 'role' => 'bar'))
+; like array('User' => array('login' => 'jeff', 'role' => 'editor'))
 ; and a map is defined like
 ; [map]
 ; User = User.login
 ; Role = User.role
 ;
-; then IniAcl will resolve this array to User.foo, Role.bar or Role.default.
-; Resolving takes place in the order you specified the map. So if you have a line in the
-; [aro] section referencing User.foo, User.foo will be returned. If not, then if you have defined a role
-; like Role.bar it will be returned. Otherwise no reference is found and the default role will be
-; returned. This way you don't need to reference every User in this file. Either stick to the Role or
-; define access for unknown users using the default role "Role.default"
+; then IniAcl will resolve this array to User.jeff, Role.editor or Role.default.
+; Resolving takes place in the order you specified the map. So if you have a 
+; line in the [aro] section referencing User.jeff, rules for User.jeff will be 
+; checked. If User.jeff is not referenced, then if you have defined a role like 
+; Role.editor it will be used instead. Otherwise, if no reference is found,
+; the default role will be returned. This way you don't need to reference every 
+; User in this file. Either stick to the Role or define access for unknown 
+; users using the default role "Role.default"
 ;
 ; [aro]
-; Role.default = null
 ; Role.admin = Role.default
 ; Role.manager = Role.default
 ; User.peter = Role.manager 		;uber boss
@@ -58,44 +60,31 @@
 ; 
 ; [aco.allow]
 ; * = Role.admin								; allow admins everything
-; controllers.*.* = Role.manager				; 
+; controllers.*.manager_* = Role.manager		; allow all manager actions
 ; controllers.Articles.delete = User.peter		; only peter may delete and
 ; controllers.Articles.publish = User.peter		; publish
 ; controllers.Invoices.delete = User.sarah		; overwrite deny rule for sarah
-; controllers.Users.dashboard = Role.default	;
+; controllers.Users.dashboard = Role.default	; allow dashboard to all authenticated users
 ;
 ; [aco.deny]
-; controllers.*.delete = Role.manager			; deny delete actions for managers
+; controllers.invoices.manager_delete = Role.manager	; deny delete actions for managers
 
-
-; define mapping 
 [map]
 User = User.username
-Department = User.department
 Role = User.role
 
 [aro]
-Role.admin 		= null							; root aro
-Role.sales 		= null							;
-Role.accounting = Role.sales					;
-Role.manager 	= Role.sales					; manager inherits from sales
-User.peter 		= Role.manager, Role.accounting	; uber boss
-User.sarah 		= Role.accounting				; secretary
-User.jeff 		= Role.manager					; another worker bee
-User.dev		= Role.admin					;
+Role.admin = null
+Role.accounting = null
+Role.editor = null
+Role.manager = Role.editor, Role.accounting
+User.jeff = Role.manager
 
 [aco.allow]
-* = User.dev
-controllers.* = Role.admin
-*ontrollers.*.manager_* = Role.manager
-controllers.Articles.* = Role.manager
-controllers.Articles.* = User.peter
-; overwrite the deny rule for Role.manager and allow baz.manager_delete only for jeff
-controllers.baz.manager_delete = User.jeff
-controllers.Users.dashboard = Role.default
-controllers.Reports.view = Role.sales
+* = Role.admin
+controllers.*.view = Role.editor, Role.accounting
+controllers.*.add = Role.editor, Role.accounting
+some.custom.rule = User.jeff 
 
 [aco.deny]
-controllers.Articles.publish = Role.manager
-controllers.Articles.delete = Role.manager	
-controllers.*.manager_delete = Role.manager
+controllers.users.add = Role.editor, Role.accounting

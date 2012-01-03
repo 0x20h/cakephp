@@ -122,6 +122,14 @@ class IniAclTest extends CakeTestCase {
 		$this->assertFalse($this->Acl->check('User.stan', 'bar/baz/manager_foo'));
 		$this->assertFalse($this->Acl->check('Role.accounting', 'bar/baz/manager_foo'));
 		$this->assertFalse($this->Acl->check('Role.accounting', 'controllers/baz/manager_foo'));
+
+		$this->assertTrue($this->Acl->check('User.stan', 'controllers/articles/edit'));
+		$this->assertTrue($this->Acl->check('User.stan', 'controllers/articles/add'));
+		$this->assertTrue($this->Acl->check('User.stan', 'controllers/articles/publish'));
+		$this->assertFalse($this->Acl->check('User.stan', 'controllers/articles/delete'));
+		$this->assertFalse($this->Acl->check('Role.accounting', 'controllers/articles/edit'));
+		$this->assertFalse($this->Acl->check('Role.accounting', 'controllers/articles/add'));
+		$this->assertFalse($this->Acl->check('Role.accounting', 'controllers/articles/publish'));
 	}
 
 

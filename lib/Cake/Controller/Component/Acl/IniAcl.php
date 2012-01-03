@@ -179,7 +179,6 @@ class IniAco {
  */
 	public static $modifiers = array(
 		'*' => '.*',
-		'?' => '.?',
 	);
 
 	public function __construct(array $allow = array(), array $deny = array()) {
