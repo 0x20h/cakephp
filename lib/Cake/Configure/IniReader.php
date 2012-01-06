@@ -53,19 +53,18 @@
 class IniReader implements ConfigReaderInterface {
 
 /**
- * options:
- *  - recursive: If true, parse dotted config keys into a recursive array structure
- *  - path: The path to read ini files from
- *  - section: The section to read, if null all sections will be read.
+ * The path to read ini files from.
  *
  * @var array
  */
-	protected $_options = array(
-		'recursive' => true,
-		'section' => null,
-		'path' => '',
-	);
+	protected $_path;
 
+/**
+ * The section to read, if null all sections will be read.
+ *
+ * @var string
+ */
+	protected $_section;
 
 /**
  * Build and construct a new ini file parser. The parser can be used to read
@@ -76,20 +75,9 @@ class IniReader implements ConfigReaderInterface {
  *     all sections in the ini file.
  */
 	public function __construct($path, $section = null) {
-		$this->setOption('path', rtrim($path, DS) . DS);
-		$this->setOption('section', $section);
+		$this->_path = rtrim($path, DS) . DS;
+		$this->_section = $section;
 	}
-
-/**
- * set internal option
- *
- * @param string $key option key
- * @param mixed $value value
- */
-	public function setOption($key, $value) {
-		$this->_options[$key] = $value;
-	}
-
 
 /**
  * Read an ini file and return the results as an array.
@@ -100,7 +88,7 @@ class IniReader implements ConfigReaderInterface {
  * @throws ConfigureException
  */
 	public function read($file) {
-		$filename = $this->_options['path'] . $file;
+		$filename = $this->_path . $file;
 		if (!file_exists($filename)) {
 			$filename .= '.ini';
 			if (!file_exists($filename)) {
@@ -108,18 +96,8 @@ class IniReader implements ConfigReaderInterface {
 			}
 		}
 		$contents = parse_ini_file($filename, true);
-		$section = $this->_options['section'];
-		
-		if ($section && !isset($contents[$section])) {
-			throw new ConfigureException(__d('cake_dev', 'Section "%s" not found in %s', $section, $filename));
-		}
-
-		if (!$this->_options['recursive']) {
-			return $section ? $contents[$section] : $contents;
-		}
-
-		if (!empty($section) && isset($contents[$section])) {
-			$values = $this->_parseNestedValues($contents[$section]);
+		if (!empty($this->_section) && isset($contents[$this->_section])) {
+			$values = $this->_parseNestedValues($contents[$this->_section]);
 		} else {
 			$values = array();
 			foreach ($contents as $section => $attribs) {
@@ -141,20 +119,19 @@ class IniReader implements ConfigReaderInterface {
  * @return array Array of values exploded
  */
 	protected function _parseNestedValues($values) {
-		$parsed = array();
-
 		foreach ($values as $key => $value) {
+			if ($value === '1') {
+				$value = true;
+			}
+			if ($value === '') {
+				$value = false;
+			}
 			if (strpos($key, '.') !== false) {
-				$parsed = Set::insert($parsed, $key, $value);
-			} elseif ($value === '1') {
-				$parsed[$key] = true;
-			} elseif ($value === '') {
-				$parsed[$key] = false;
+				$values = Set::insert($values, $key, $value);
 			} else {
-				$parsed[$key] = $value;
+				$values[$key] = $value;
 			}
 		}
-		
-		return $parsed;
+		return $values;
 	}
 }

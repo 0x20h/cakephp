@@ -24,22 +24,22 @@
 ;
 ; aco = access control object (something you restrict access to in your application)
 ; examples:
-;	controllers.users.add
-;	custom.rule.sendCustomerInvoiceEmails 
+;	/controllers/users/add
+;	/custom/rule/sendCustomerInvoiceEmails 
 ;	
 ; aro = access request object (something requesting access)
 ; examples:
-;	User.jeff
-;	Role.admin
-;	Department.sales
+;	User/jeff
+;	Role/admin
+;	Department/sales
 ;
 ; First, define a mapping to resolve AROs. E.g. if $acl->check() gets an ARO
 ; like array('User' => array('login' => 'jeff', 'role' => 'editor'))
 ; and a map is defined like
 ;
 ; [map]
-; User = User.login
-; Role = User.role
+; User = User/login
+; Role = User/role
 ;
 ; then IniAcl will resolve this array to User.jeff, Role.editor or Role.default 
 ; depending on the definitions of AROs in the [aro] section.
@@ -55,50 +55,48 @@
 ; [aco.allow] and [aco.deny] sections.
 ;
 ; [aro]
-; Role.admin = null
-; Role.manager = null
-; User.peter = Role.manager
-; User.sarah = Role.manager
-; User.sue = Role.default
-; User.jonny_dev = Role.admin
+; Role/admin = null
+; Role/manager = null
+; User/peter = Role/manager
+; User/sarah = Role/manager
+; User/sue = Role/default
+; User/jonny_dev = Role/admin
 ;
 ; In the [aco.allow] and [aco.deny] sections you can define access controlled
 ; objects. E.g. if AuthComponent is configured to use "/controllers" as actionPath
-; you can define controllers.CONTROLLER.ACTION to reference them and grant access to
+; you can define /controllers/CONTROLLER/ACTION to reference them and grant access to
 ; several AROs. The left hand side in [aco.allow] and [aco.deny] sections supports 
 ; wildcards, so if you specify a rule for Role.manager for the ACO 
-; "controllers.*.manager_*" every manager is allowed all actions starting with
+; "/controllers/*/manager_*" every manager is allowed all actions starting with
 ; "manager_" on all controllers.
 ; 
 ; [aco.allow]
-; * = Role.admin								; allow admins everything
-; controllers.*.manager_* = Role.manager		; allow all manager actions
-; controllers.Articles.delete = User.peter		; only peter may delete and
-; controllers.Articles.publish = User.peter		; publish
-; controllers.Invoices.delete = User.sarah		; overwrite deny rule for sarah
-; controllers.Users.dashboard = Role.default	; allow dashboard to all authenticated users
+; /* = Role.admin										; allow admins everything
+; /controllers/*/manager_* = Role/manager				; allow all manager actions
+; /controllers/*/manager_delete = User/peter			; only peter may delete
+; /controllers/Users/dashboard = Role/default			; allow dashboard to all authenticated users
 ;
 ; [aco.deny]
-; controllers.invoices.manager_delete = Role.manager	; deny delete actions for managers
+; controllers/invoices/manager_delete = Role/manager	; deny manager_delete actions for managers
 
 [map]
-User = User.username
-Role = User.role
+User = User/username
+Role = User/role
 
 [aro]
-Role.admin = null
-Role.accounting = null
-Role.editor = null
-Role.manager = Role.editor, Role.accounting
-User.jeff = Role.manager
+Role/admin = null
+Role/accounting = null
+Role/editor = null
+Role/manager = Role/editor, Role/accounting
+User/jeff = Role/manager
 
 [aco.allow]
-* = Role.admin
-controllers.*.view = Role.editor, Role.accounting
-controllers.*.add = Role.editor, Role.accounting
+/* = Role/admin
+/controllers/*/view = Role.editor, Role/accounting
+/controllers/*/add = Role.editor, Role/accounting
 
-;# in your controller: $this->Acl->check('jeff', 'some/custom/rule') -> true
-some.custom.rule = User.jeff 
+;# in your controller: $this->Acl->check('jeff', 'some/custom/rule') === true
+/some/custom/rule = User/jeff 
 
 [aco.deny]
 controllers.users.add = Role.editor, Role.accounting

@@ -55,7 +55,6 @@ class IniAcl extends Object implements AclInterface {
 		
 		App::uses('IniReader', 'Configure');
 		$Reader = new IniReader(dirname($this->options['config']));
-		$Reader->setOption('recursive', false);
 		$config = $Reader->read(basename($this->options['config']));
 		$this->build($config);
 		$Component->Aco = $this->Aco;
@@ -281,12 +280,7 @@ class IniAco {
 			return array_map('strtolower', $aco);
 		}
 
-		$char = strpos($aco, '.') ? '.' : '/';
-
-		if ($char == '/') {
-			$aco = ltrim($aco, '/');
-		}
-		return array_map('trim', explode($char, strtolower($aco)));
+		return array_map('trim', explode('/', ltrim(strtolower($aco), '/')));
 	}
 
 /**
@@ -328,7 +322,7 @@ class IniAro {
  *
  * @var string
  */
-	const DEFAULT_ROLE = 'Role.default';
+	const DEFAULT_ROLE = 'Role/default';
 
 /**
  * map external identifiers
@@ -336,8 +330,8 @@ class IniAro {
  * @var array
  */
 	public $map = array(
-		'User' => 'User.username',
-		'Role' => 'Role.name'
+		'User' => 'User/username',
+		'Role' => 'Role/name'
 	);
 
 /**
@@ -367,7 +361,6 @@ class IniAro {
 		$aros = array();
 		$aro = $this->resolve($aro);
 		$stack = array(array($aro, 0));
-		$path = array();
 
 		while (!empty($stack)) {
 			list($element, $depth) = array_pop($stack);
@@ -380,6 +373,10 @@ class IniAro {
 			}
 		}
 
+		// everybody inherits from the default role
+		if ($aro != self::DEFAULT_ROLE) {
+			$aros[]= array(self::DEFAULT_ROLE);
+		}
 		return array_reverse($aros);
 	}
 
@@ -393,28 +390,27 @@ class IniAro {
  */
 	public function resolve($aro) {
 		foreach ($this->map as $aroGroup => $map) {
-			list ($model, $field) = explode('.', $map);
+			list ($model, $field) = explode('/', $map);
 			$mapped = '';
 
 			if (is_array($aro)) {
 				if (isset($aro['model']) && isset($aro['foreign_key']) && $aro['model'] == $aroGroup) {
-					$mapped = $aroGroup .  '.' . $aro['foreign_key'];
+					$mapped = $aroGroup .  '/' . $aro['foreign_key'];
 				}
 				
 				if (isset($aro[$model][$field])) {
-					$mapped = $aroGroup . '.' . $aro[$model][$field];
+					$mapped = $aroGroup . '/' . $aro[$model][$field];
 				}
 			} elseif (is_string($aro)) {
-				if (strpos($aro, '.') === false && strpos($aro, '/') === false) {
-					$mapped = $aroGroup . '.' . $aro;
+				if (strpos($aro, '/') === false) {
+					$mapped = $aroGroup . '/' . $aro;
 				} else {
-					$separator = strpos($aro, '.') !== false ? '.' : '/';
-					list($aroModel, $aroValue) =  explode($separator, $aro);
+					list($aroModel, $aroValue) =  explode('/', $aro);
 
 					$aroModel = Inflector::camelize($aroModel);
 
 					if ($aroModel == $model || $aroModel == $aroGroup) {
-						$mapped = $aroGroup . '.' . $aroValue;
+						$mapped = $aroGroup . '/' . $aroValue;
 					}
 				}
 			}
@@ -446,7 +442,7 @@ class IniAro {
 				foreach ($deps as $dependency) {
 					// detect cycles
 					$roles = $this->roles($dependency);
-					
+				
 					if (in_array($role, Set::flatten($roles))) {
 						$path = '';
 
