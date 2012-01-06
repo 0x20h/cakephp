@@ -261,38 +261,4 @@ class IniAclTest extends CakeTestCase {
 		$this->assertFalse($this->Acl->check('Role.sales', 'controllers/bar/delete'));
 		$this->assertFalse($this->Acl->check('Role.sales', 'controllers/bar', 'delete'));
 	}
-
-
-/**
- * acl data taken from the docs, declared in test_app/Config/acl.php
- *
- */
-	public function testPhpConfig() {
-		$this->Acl->settings['ini_acl']['config'] = CAKE . 'Test' . DS . 'test_app' . DS . 'Config'. DS . 'acl.php';
-		$this->Acl->settings['ini_acl']['reader'] = 'php';
-		$this->IniAcl->initialize($this->Acl);
-		$this->assertTrue($this->IniAcl->check('Legolas', 'weapons'));
-
-		$this->assertFalse($this->IniAcl->check('Hobbit', 'ring'));
-		$this->assertFalse($this->IniAcl->check('Gandalf', 'ring'));
-		$this->assertFalse($this->IniAcl->check('Gollum', 'ring'));
-		$this->assertTrue($this->IniAcl->check('Frodo', 'ring'));
-		
-		// see docs for DbAcl. 
-		// Using iniAcl you can write like that
-		$this->IniAcl->deny('Legolas', 'weapons/delete');
-		$this->IniAcl->deny('Gimli', 'weapons/delete');
-
-		// these are equivalent
-		$this->assertTrue($this->Acl->check('Warriors', 'weapons', 'delete'));
-		$this->assertTrue($this->Acl->check('Role.Warriors', 'weapons/delete'));
-
-		$this->assertTrue($this->Acl->check('Aragorn', 'weapons/delete'));
-		$this->assertTrue($this->Acl->check('Aragorn', 'weapons', 'delete'));
-
-		$this->assertFalse($this->Acl->check('Gimli', 'weapons/delete'));
-		$this->assertFalse($this->Acl->check('Gimli', 'weapons', 'delete'));
-		$this->assertFalse($this->Acl->check('Legolas', 'weapons/delete'));
-		$this->assertFalse($this->Acl->check('Legolas', 'weapons', 'delete'));
-	}
 }

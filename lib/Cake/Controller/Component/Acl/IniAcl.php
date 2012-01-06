@@ -2,7 +2,7 @@
 
 /**
  * IniAcl implements an access control system using an INI file.  An example
- * of the ini file used can be found in /config/acl.ini.php.
+ * of the ini file used can be found in app/Config/acl.ini.php.
  *
  * @package       Cake.Controller.Component
  */
@@ -12,7 +12,9 @@ class IniAcl extends Object implements AclInterface {
 	const ALLOW = true;
 
 /**
- * Options array 
+ * Options:
+ *  - policy: determines behavior of the check method. Deny policy needs explicit allow rules, allow policy needs explicit deny rules
+ *  - config: absolute path to config file that contains the acl rules (@see app/Config/acl.ini.php)
  *
  * @var array
  */
@@ -37,7 +39,6 @@ class IniAcl extends Object implements AclInterface {
 	public function __construct() {
 		$this->options = array(
 			'policy' => self::DENY,
-			'reader' => 'ini',
 			'config' => APP . 'Config' . DS . 'acl.ini.php',
 		);
 	}
@@ -52,10 +53,10 @@ class IniAcl extends Object implements AclInterface {
 			$this->options = array_merge($this->options, $Component->settings['ini_acl']);
 		}
 		
-		$readerClass = Inflector::camelize($this->options['reader'].'_reader');
-		App::uses($readerClass, 'Configure');
-		$Reader = new $readerClass(dirname($this->options['config']));
-		$config = $Reader->read(basename($this->options['config']), false);
+		App::uses('IniReader', 'Configure');
+		$Reader = new IniReader(dirname($this->options['config']));
+		$Reader->setOption('recursive', false);
+		$config = $Reader->read(basename($this->options['config']));
 		$this->build($config);
 		$Component->Aco = $this->Aco;
 		$Component->Aro = $this->Aro;
@@ -281,6 +282,10 @@ class IniAco {
 		}
 
 		$char = strpos($aco, '.') ? '.' : '/';
+
+		if ($char == '/') {
+			$aco = ltrim($aco, '/');
+		}
 		return array_map('trim', explode($char, strtolower($aco)));
 	}
 
