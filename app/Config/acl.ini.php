@@ -66,15 +66,19 @@
 ; objects. E.g. if AuthComponent is configured to use "/controllers" as actionPath
 ; you can define /controllers/CONTROLLER/ACTION to reference them and grant access to
 ; several AROs. The left hand side in [aco.allow] and [aco.deny] sections supports 
-; wildcards, so if you specify a rule for Role.manager for the ACO 
+; wildcards, so if you specify a rule for Role.manager for an ACO like
 ; "/controllers/*/manager_*" every manager is allowed all actions starting with
 ; "manager_" on all controllers.
 ; 
 ; [aco.allow]
-; /* = Role.admin										; allow admins everything
-; /controllers/*/manager_* = Role/manager				; allow all manager actions
-; /controllers/*/manager_delete = User/peter			; only peter may delete
-; /controllers/Users/dashboard = Role/default			; allow dashboard to all authenticated users
+; # allow everything for admins
+; /* = Role.admin
+; # allow all actions starting with manager_ on all conrollers for managers
+; /controllers/*/manager_* = Role/manager			
+; # allow peter manager_delete actions on all controllers 
+; /controllers/*/manager_delete = User/peter
+; # allow users dashboard to every authenticated user
+; /controllers/Users/dashboard = Role/default
 ;
 ; [aco.deny]
 ; controllers/invoices/manager_delete = Role/manager	; deny manager_delete actions for managers

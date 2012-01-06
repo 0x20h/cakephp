@@ -34,25 +34,25 @@ App::uses('Component', 'Controller');
 class AclComponent extends Component {
 
 /**
- * ARO Object
- *
- * @var Model
- */
-	public $Aro;
-
-/**
- * ACO Object
- *
- * @var Model
- */
-	public $Aco;
-
-/**
  * Instance of an ACL class
  *
  * @var AclInterface
  */
 	protected $_Instance = null;
+
+/**
+ * Aro object.
+ *
+ * @var object
+ */
+	public $Aro;
+
+/**
+ * Aco object
+ *
+ * @var object
+ */
+	public $Aco;
 
 /**
  * Constructor. Will return an instance of the correct ACL class as defined in `Configure::read('Acl.classname')`
@@ -83,10 +83,10 @@ class AclComponent extends Component {
 		if ($adapter) {
 			if (is_string($adapter)) {
 				App::uses($adapter, 'Controller/Component/Acl');
-				
+			
 				if (!class_exists($adapter) && !App::import('Component', $adapter)) {
-					throw new CakeException(__d('cake_dev', 'AclComponent adapter class not found'));
-				}
+					throw new CakeException(__d('cake_dev', 'AclComponent adapter class %s not found', $adapter));
+				} 
 
 				$adapter = new $adapter();
 			}

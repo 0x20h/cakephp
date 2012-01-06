@@ -64,7 +64,7 @@ class IniAcl extends Object implements AclInterface {
 
 	public function build($config) {
 		if ($config instanceOf ConfigReaderInterface) {
-			$config = $config->read(basename($this->options['config']), false);
+			$config = $config->read(basename($this->options['config']));
 		}
 
 		if (empty($config['aro'])) {
@@ -194,9 +194,7 @@ class IniAco {
 		$aco = $this->resolve($aco);
 		$path = array();
 		$level = 0;
-		$root = $this->tree;
-		
-		// add allow/deny rules from matchable nodes
+		$root = $this->tree;	
 		$stack = array(array($root, 0));
 
 		while (!empty($stack)) {
