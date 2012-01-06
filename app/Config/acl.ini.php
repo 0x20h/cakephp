@@ -33,30 +33,42 @@
 ;	Role.admin
 ;	Department.sales
 ;
-; define a mapping to resolve AROs. E.g. if check() gets an ARO
+; First, define a mapping to resolve AROs. E.g. if $acl->check() gets an ARO
 ; like array('User' => array('login' => 'jeff', 'role' => 'editor'))
 ; and a map is defined like
+;
 ; [map]
 ; User = User.login
 ; Role = User.role
 ;
-; then IniAcl will resolve this array to User.jeff, Role.editor or Role.default.
+; then IniAcl will resolve this array to User.jeff, Role.editor or Role.default 
+; depending on the definitions of AROs in the [aro] section.
 ; Resolving takes place in the order you specified the map. So if you have a 
 ; line in the [aro] section referencing User.jeff, rules for User.jeff will be 
 ; checked. If User.jeff is not referenced, then if you have defined a role like 
 ; Role.editor it will be used instead. Otherwise, if no reference is found,
 ; the default role will be returned. This way you don't need to reference every 
-; User in this file. Either stick to the Role or define access for unknown 
+; User in this file. Either stick to the Role or define access for new
 ; users using the default role "Role.default"
+; 
+; The [aro] section defines roles that can be granted or denied access to ACOs in the 
+; [aco.allow] and [aco.deny] sections.
 ;
 ; [aro]
-; Role.admin = Role.default
-; Role.manager = Role.default
-; User.peter = Role.manager 		;uber boss
-; User.sarah = Role.manager			;secretary
-; User.jonny_dev = Role.admin		;nerd
+; Role.admin = null
+; Role.manager = null
+; User.peter = Role.manager
+; User.sarah = Role.manager
+; User.sue = Role.default
+; User.jonny_dev = Role.admin
 ;
-; define access control objects
+; In the [aco.allow] and [aco.deny] sections you can define access controlled
+; objects. E.g. if AuthComponent is configured to use "/controllers" as actionPath
+; you can define controllers.CONTROLLER.ACTION to reference them and grant access to
+; several AROs. The left hand side in [aco.allow] and [aco.deny] sections supports 
+; wildcards, so if you specify a rule for Role.manager for the ACO 
+; "controllers.*.manager_*" every manager is allowed all actions starting with
+; "manager_" on all controllers.
 ; 
 ; [aco.allow]
 ; * = Role.admin								; allow admins everything
@@ -84,6 +96,8 @@ User.jeff = Role.manager
 * = Role.admin
 controllers.*.view = Role.editor, Role.accounting
 controllers.*.add = Role.editor, Role.accounting
+
+;# in your controller: $this->Acl->check('jeff', 'some/custom/rule') -> true
 some.custom.rule = User.jeff 
 
 [aco.deny]
