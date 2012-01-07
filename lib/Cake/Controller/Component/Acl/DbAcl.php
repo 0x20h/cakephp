@@ -17,7 +17,7 @@
  *			edit
  * }}}
  *
- * @package       Cake.Controller.Component
+ * @package       Cake.Controller.Component.Acl
  */
 class DbAcl extends Object implements AclInterface {
 

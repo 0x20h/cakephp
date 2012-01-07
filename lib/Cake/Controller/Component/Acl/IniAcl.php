@@ -4,7 +4,7 @@
  * IniAcl implements an access control system using an INI file.  An example
  * of the ini file used can be found in app/Config/acl.ini.php.
  *
- * @package       Cake.Controller.Component
+ * @package       Cake.Controller.Component.Acl
  */
 class IniAcl extends Object implements AclInterface {
 
