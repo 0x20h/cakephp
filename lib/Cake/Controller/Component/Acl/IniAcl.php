@@ -399,6 +399,10 @@ class IniAro {
 				if (isset($aro[$model][$field])) {
 					$mapped = $aroGroup . '/' . $aro[$model][$field];
 				}
+
+				if (isset($aro[$field])) {
+					$mapped = $aroGroup . '/' . $aro[$field];
+				}
 			} elseif (is_string($aro)) {
 				if (strpos($aro, '/') === false) {
 					$mapped = $aroGroup . '/' . $aro;
