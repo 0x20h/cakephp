@@ -396,10 +396,10 @@ class IniAro {
 
 /**
  * resolve an ARO identifier to an internal ARO string using
- * the internal mapping information
+ * the internal mapping information. 
  *
  * @param mixed $aro ARO identifier (User.jeff, array('User' => ...), etc)
- * @return string dot separated aro string (e.g. User.jeff, Role.admin)
+ * @return string internal aro string (e.g. User/jeff, Role/default)
  */
 	public function resolve($aro) {
 		foreach ($this->map as $aroGroup => $map) {

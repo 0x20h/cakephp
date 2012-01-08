@@ -41,15 +41,15 @@
 ; User = User/login
 ; Role = User/role
 ;
-; then IniAcl will resolve this array to User.jeff, Role.editor or Role.default 
+; then IniAcl will resolve this array to User/jeff, Role/editor or Role/default 
 ; depending on the definitions of AROs in the [aro] section.
 ; Resolving takes place in the order you specified the map. So if you have a 
-; line in the [aro] section referencing User.jeff, rules for User.jeff will be 
-; checked. If User.jeff is not referenced, then if you have defined a role like 
-; Role.editor it will be used instead. Otherwise, if no reference is found,
+; line in the [aro] section referencing User/jeff, rules for User/jeff will be 
+; checked. If User/jeff is not referenced, then if you have defined a role like 
+; Role/editor it will be used instead. Otherwise, if no reference is found,
 ; the default role will be returned. This way you don't need to reference every 
 ; User in this file. Either stick to the Role or define access for new
-; users using the default role "Role.default". If your role information is stored 
+; users using the default role "Role/default". If your role information is stored 
 ; in the user model as a foreign_key (e.g. role_id => 4 instead of role => editor) 
 ; you can optionally define aliases for these foreign_keys:
 ; 
@@ -72,7 +72,7 @@
 ; objects. E.g. if AuthComponent is configured to use "/controllers" as actionPath
 ; you can define /controllers/CONTROLLER/ACTION to reference them and grant access to
 ; several AROs. The left hand side in [aco.allow] and [aco.deny] sections supports 
-; wildcards, so if you specify a rule for Role.manager for an ACO like
+; wildcards, so if you specify a rule for Role/manager for an ACO like
 ; "/controllers/*/manager_*" every manager is allowed all actions starting with
 ; "manager_" on all controllers.
 ; 
@@ -108,7 +108,7 @@ User/jeff = Role/manager
 
 [aco.allow]
 /* = Role/admin
-/controllers/*/view = Role.default
+/controllers/*/view = Role/default
 /controllers/* = Role/manager
 /controllers/invoices/* = Role/accounting
 /controllers/articles/* = Role/editor
