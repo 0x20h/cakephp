@@ -49,9 +49,15 @@
 ; Role.editor it will be used instead. Otherwise, if no reference is found,
 ; the default role will be returned. This way you don't need to reference every 
 ; User in this file. Either stick to the Role or define access for new
-; users using the default role "Role.default"
+; users using the default role "Role.default". If your role information is stored 
+; in the user model as a foreign_key (e.g. role_id => 4 instead of role => editor) 
+; you can optionally define aliases for these foreign_keys:
 ; 
-; The [aro] section defines roles that can be granted or denied access to ACOs in the 
+; [alias]
+; Role/4 = Role/editor
+; 
+; Now role_id 4 will be resolved to Role/editor. This way you can keep your ini file
+; readable. The [aro] section then defines roles that can be granted or denied access to ACOs in the 
 ; [aco.allow] and [aco.deny] sections.
 ;
 ; [aro]
@@ -72,7 +78,7 @@
 ; 
 ; [aco.allow]
 ; # allow everything for admins
-; /* = Role.admin
+; /* = Role/admin
 ; # allow all actions starting with manager_ on all conrollers for managers
 ; /controllers/*/manager_* = Role/manager			
 ; # allow peter manager_delete actions on all controllers 
@@ -85,7 +91,13 @@
 
 [map]
 User = User/username
-Role = User/role
+Role = User/group_id
+
+[alias]
+Role/1 = Role/admin
+Role/2 = Role/accounting
+Role/3 = Role/manager
+Role/4 = Role/editor
 
 [aro]
 Role/admin = null
@@ -96,11 +108,14 @@ User/jeff = Role/manager
 
 [aco.allow]
 /* = Role/admin
-/controllers/*/view = Role.editor, Role/accounting
-/controllers/*/add = Role.editor, Role/accounting
+/controllers/*/view = Role.default
+/controllers/* = Role/manager
+/controllers/invoices/* = Role/accounting
+/controllers/articles/* = Role/editor
 
 ;# in your controller: $this->Acl->check('jeff', 'some/custom/rule') === true
 /some/custom/rule = User/jeff 
 
 [aco.deny]
-controllers.users.add = Role.editor, Role.accounting
+controllers/users/delete = Role/manager
+controllers/invoices/delete = Role/manager
