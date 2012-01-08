@@ -79,8 +79,9 @@ class IniAcl extends Object implements AclInterface {
 		$deny = !empty($config['aco.deny']) ? $config['aco.deny'] : array();
 		$aro = !empty($config['aro']) ? $config['aro'] : array();
 		$map = !empty($config['map']) ? $config['map'] : array();
+		$alias = !empty($config['alias']) ? $config['alias'] : array();
 
-		$this->Aro = new IniAro($aro, $map);
+		$this->Aro = new IniAro($aro, $map, $alias);
 		$this->Aco = new IniAco($allow, $deny);
 	}
 
@@ -333,14 +334,22 @@ class IniAro {
 	);
 
 /**
+ * aliases to map
+ * 
+ * @var array
+ */
+	public $aliases = array();
+
+/**
  * internal ARO representation
  *
  * @var array
  */
 	protected $tree = array();
 
-	public function __construct(array $aro = array(), array $map = array()) {
+	public function __construct(array $aro = array(), array $map = array(), array $aliases = array()) {
 		!empty($map) && $this->map = $map;
+		$this->aliases = $aliases;
 		$this->build($aro);
 	}
 
@@ -394,16 +403,14 @@ class IniAro {
 			if (is_array($aro)) {
 				if (isset($aro['model']) && isset($aro['foreign_key']) && $aro['model'] == $aroGroup) {
 					$mapped = $aroGroup .  '/' . $aro['foreign_key'];
-				}
-				
-				if (isset($aro[$model][$field])) {
+				} elseif (isset($aro[$model][$field])) {
 					$mapped = $aroGroup . '/' . $aro[$model][$field];
-				}
-
-				if (isset($aro[$field])) {
+				} elseif (isset($aro[$field])) {
 					$mapped = $aroGroup . '/' . $aro[$field];
 				}
 			} elseif (is_string($aro)) {
+				$aro = ltrim($aro, '/');
+
 				if (strpos($aro, '/') === false) {
 					$mapped = $aroGroup . '/' . $aro;
 				} else {
@@ -416,10 +423,16 @@ class IniAro {
 					}
 				}
 			}
-
-			if (in_array($mapped, array_keys($this->tree))) {
+			
+			if (isset($this->tree[$mapped])) {
 				return $mapped;
 			}
+			
+			// is there a matching alias defined (e.g. Role/1 => Role/admin)?
+			if (!empty($this->aliases[$mapped])) {
+				return $this->aliases[$mapped];
+			}
+
 		}
 
 		return self::DEFAULT_ROLE;
@@ -466,6 +479,15 @@ class IniAro {
 		}
 	}
 
+/**
+ * adds one or more aliases to the internal map. Overwrites existing entries.
+ *
+ * @param array $alias alias from => to (e.g. Role/13 -> Role/editor)
+ * @return void
+ */
+	public  function addAlias(array $alias) {
+		$this->aliases = array_merge($this->aliases, $alias);
+	}
 
 /**
  * build an ARO tree structure for internal processing

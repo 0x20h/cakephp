@@ -24,7 +24,7 @@ class_exists('AclComponent');
 /**
  * Test case for the IniAcl implementation
  *
- * @package       Cake.Test.Case.Controller.Component
+ * @package       Cake.Test.Case.Controller.Component.Acl
  */
 class IniAclTest extends CakeTestCase {
 
@@ -81,6 +81,54 @@ class IniAclTest extends CakeTestCase {
 
 		$this->assertEquals(IniAro::DEFAULT_ROLE, $this->Acl->Aro->resolve('bla'));
 		$this->assertEquals(IniAro::DEFAULT_ROLE, $this->Acl->Aro->resolve(array('FooModel' => array('role' => 'hardy'))));
+	}
+
+
+	public function testAroAliases() {
+		$this->Acl->Aro->map = array(
+			'User' => 'User/username',
+			'Role' => 'User/group_id',
+		);
+
+		$this->Acl->Aro->aliases = array(
+			'Role/1' => 'Role/admin',
+			'Role/24' => 'Role/accounting',	
+		);
+
+		$user = array(
+			'User' => array(
+				'username' => 'unknown_user',
+				'group_id' => '1',
+			),
+		);
+		// group/1
+		$this->assertEquals('Role/admin', $this->Acl->Aro->resolve($user));
+		// group/24
+		$this->assertEquals('Role/accounting', $this->Acl->Aro->resolve('Role/24'));
+		$this->assertEquals('Role/accounting', $this->Acl->Aro->resolve('24'));
+
+		// check department
+		$user = array(
+			'User' => array(
+				'username' => 'foo',
+				'group_id' => '25',
+			),
+		);
+
+		$this->Acl->Aro->addRole(array('Role/IT' => null));
+		$this->Acl->Aro->addAlias(array('Role/25' => 'Role/IT'));
+		$this->Acl->allow('Role/IT', '/rules/debugging/*');
+
+		$this->assertEquals(array(array('Role/default'), array('Role/IT', )), $this->Acl->Aro->roles($user));
+		$this->assertTrue($this->Acl->check($user, '/rules/debugging/stats/pageload'));
+		$this->assertTrue($this->Acl->check($user, '/rules/debugging/sql/queries'));
+		// Role/default is allowed users dashboard, so is Role/IT
+		$this->assertTrue($this->Acl->check($user, '/controllers/users/dashboard'));
+
+		$this->assertFalse($this->Acl->check($user, '/controllers/invoices/send'));
+		// wee add an more specific entry for user foo to also inherit from Role/accounting 
+		$this->Acl->Aro->addRole(array('User/foo' => 'Role/IT, Role/accounting'));
+		$this->assertTrue($this->Acl->check($user, '/controllers/invoices/send'));
 	}
 
 /**
