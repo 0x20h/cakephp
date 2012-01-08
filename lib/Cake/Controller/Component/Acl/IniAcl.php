@@ -324,13 +324,19 @@ class IniAro {
 	const DEFAULT_ROLE = 'Role/default';
 
 /**
- * map external identifiers
+ * map external identifiers. E.g. if
  *
+ * array('User' => array('username' => 'jeff', 'role' => 'editor')) 
+ *
+ * is passed as an ARO to one of the methods of AclComponent, IniAcl 
+ * will check if it can be resolved to an User or a Role defined in the
+ * ini file. 
+ * 
  * @var array
  */
 	public $map = array(
 		'User' => 'User/username',
-		'Role' => 'Role/name'
+		'Role' => 'User/role',
 	);
 
 /**
