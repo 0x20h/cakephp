@@ -57,8 +57,8 @@
 ; Role/4 = Role/editor
 ; 
 ; Now role_id 4 will be resolved to Role/editor. This way you can keep your ini file
-; readable. The [aro] section then defines roles that can be granted or denied access to ACOs in the 
-; [aco.allow] and [aco.deny] sections.
+; more readable. The [aro] section then defines roles that can be granted or denied 
+; access to ACOs in the [aco.allow] and [aco.deny] sections.
 ;
 ; [aro]
 ; Role/admin = null
