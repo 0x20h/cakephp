@@ -58,11 +58,14 @@
 ; 
 ; Now role_id 4 will be resolved to Role/editor. This way you can keep your ini file
 ; more readable. The [aro] section then defines roles that can be granted or denied 
-; access to ACOs in the [aco.allow] and [aco.deny] sections.
+; access to ACOs in the [aco.allow] and [aco.deny] sections. On the right hand side 
+; inherited roles can be defined. 
 ;
 ; [aro]
+; # no inheritance
 ; Role/admin = null
 ; Role/manager = null
+; # peter inherits all rules of Role/manager
 ; User/peter = Role/manager
 ; User/sarah = Role/manager
 ; User/sue = Role/default
