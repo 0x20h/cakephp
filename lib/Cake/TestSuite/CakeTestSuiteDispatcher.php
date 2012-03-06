@@ -28,6 +28,7 @@ App::uses('CakeTestSuiteCommand', 'TestSuite');
  * @package       Cake.TestSuite
  */
 class CakeTestSuiteDispatcher {
+
 /**
  * 'Request' parameters
  *
@@ -79,7 +80,7 @@ class CakeTestSuiteDispatcher {
  *
  * @return void
  */
-	function __construct() {
+	public function __construct() {
 		$this->_baseUrl = $_SERVER['PHP_SELF'];
 		$dir = rtrim(dirname($this->_baseUrl), '\\');
 		$this->_baseDir = ($dir === '/') ? $dir : $dir . '/';
@@ -161,7 +162,7 @@ class CakeTestSuiteDispatcher {
  *
  * @return void
  */
-	function _checkXdebug() {
+	protected function _checkXdebug() {
 		if (!extension_loaded('xdebug')) {
 			$baseDir = $this->_baseDir;
 			include CAKE . 'TestSuite' . DS . 'templates' . DS . 'xdebug.php';
@@ -174,7 +175,7 @@ class CakeTestSuiteDispatcher {
  *
  * @return void
  */
-	function _testCaseList() {
+	protected function _testCaseList() {
 		$command = new CakeTestSuiteCommand('', $this->params);
 		$Reporter = $command->handleReporter($this->params['output']);
 		$Reporter->paintDocumentStart();
@@ -199,7 +200,7 @@ class CakeTestSuiteDispatcher {
  *
  * @return void
  */
-	function _parseParams() {
+	protected function _parseParams() {
 		if (!$this->_paramsParsed) {
 			if (!isset($_SERVER['SERVER_NAME'])) {
 				$_SERVER['SERVER_NAME'] = '';
@@ -226,7 +227,7 @@ class CakeTestSuiteDispatcher {
  *
  * @return void
  */
-	function _runTestCase() {
+	protected function _runTestCase() {
 		$commandArgs = array(
 			'case' => $this->params['case'],
 			'core' => $this->params['core'],
@@ -255,4 +256,5 @@ class CakeTestSuiteDispatcher {
 			exit();
 		}
 	}
+
 }
