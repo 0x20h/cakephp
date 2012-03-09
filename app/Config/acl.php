@@ -74,11 +74,11 @@
  *
  *    $config['rules'] = array(
  *       'allow' => array(
- *       	'*' => 'Role/admin',
+ *       	'.*' => 'Role/admin',
  *       	'controllers/users/(dashboard|profile)' => 'Role/default',
- *       	'controllers/invoices/*' => 'Role/accountant',
- *       	'controllers/articles/*' => 'Role/editor',
- *       	'controllers/users/*'  => 'Role/manager',
+ *       	'controllers/invoices/.*' => 'Role/accountant',
+ *       	'controllers/articles/.*' => 'Role/editor',
+ *       	'controllers/users/.*'  => 'Role/manager',
  *       	'controllers/invoices/delete'  => 'Role/manager',
  *       ),
  *       'deny' => array(
@@ -91,7 +91,7 @@
  * Role/editor, Role/accountant and Role/default. However, for jeff, rules for User/jeff are more specific than 
  * rules for Role/manager, rules for Role/manager are more specific than rules for Role/editor and so on.
  * This is important when allow and deny rules match for a role. E.g. Role/accountant is allowed 
- * controllers/invoices/* but at the same time controllers/invoices/delete is denied. But there is a more
+ * controllers/invoices/.* but at the same time controllers/invoices/delete is denied. But there is a more
  * specific rule defined for Role/manager which is allowed controllers/invoices/delete. However, the most specific
  * rule denies access to the delete action explicitly for User/jeff, so he'll be denied access to the resource.
  *
@@ -128,7 +128,7 @@ $config['roles'] = array(
  */
 $config['rules'] = array(
 	'allow' => array(
-		'*' => 'Role/admin',
+		'.*' => 'Role/admin',
 	),
 	'deny' => array(),
 );

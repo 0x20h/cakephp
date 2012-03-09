@@ -197,15 +197,6 @@ class PhpAco {
  */
 	protected $_tree = array();
 
-/**
- * map modifiers for ACO paths to their respective PCRE pattern
- * 
- * @var array
- */
-	public static $modifiers = array(
-		'*' => '.*',
-	);
-
 	public function __construct(array $rules = array()) {
 		foreach (array('allow', 'deny') as $type) {
 			if (empty($rules[$type])) {
@@ -236,7 +227,7 @@ class PhpAco {
 			}
 
 			foreach ($root as $node => $elements) {
-				$pattern = '/^' . str_replace(array_keys(self::$modifiers), array_values(self::$modifiers), $node) . '$/';
+				$pattern = '/^' . $node . '$/';
 
 				if ($node == $aco[$level] || preg_match($pattern, $aco[$level])) {
 					// merge allow/denies with $path of current level
